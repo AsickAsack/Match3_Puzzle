@@ -2,112 +2,107 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
-using System;
-using Unity.VisualScripting;
 
-public class Puzzle : MonoBehaviour, IPointerDownHandler, IPointerEnterHandler
+
+public enum PuzzleType
+{
+    Empty, Normal, Obstacle, Horizontal, Vertical, Bomb, FindSameColor
+}
+
+public enum PuzzleColor
+{
+    Blue, Green, Red, Purple, None
+}
+
+public class Puzzle : MonoBehaviour
 {
 
-    public Image image;
-
+    //좌표
     public int x;
     public int y;
 
     public PuzzleType type;
     public PuzzleColor color;
+
+    public RectTransform myRect;
+
+    [SerializeField]
+    private Animator animator;
+
+    private MoveablePuzzle moveable;
+
+    //매니저
     private PuzzleManager manager;
 
-    private Coroutine moveCor;
+    private void Awake()
+    {
+        moveable = this.GetComponent<MoveablePuzzle>();
+    }
+
+    //움직일수 있는 퍼즐인지 확인
+    public bool IsMoveable()
+    {
+        return moveable != null;
+    }
+
+    public void Move(int x,int y,float fillTime)
+    {
+        moveable.Move(x,y,fillTime);
+    }
+
+    public void Move(float fillTime)
+    {
+        moveable.Move(fillTime);
+    }
+
 
     //퍼즐 초기화
-    public void Init(int x,int y,PuzzleManager manager)
+    public void Init(int x, int y, PuzzleType type, PuzzleManager manager)
     {
         this.manager = manager;
+        moveable.SetManager(manager);
 
         this.x = x;
         this.y = y;
 
-        type = PuzzleType.Basic;
+        this.type = type;
 
-        int rand = UnityEngine.Random.Range(0, manager.puzzleSprs.Length);
-        this.image.sprite = manager.puzzleSprs[rand];
-        this.color = (PuzzleColor)rand;
+        SetPos(manager.GetPos(x, y));
+    }
 
-        image.rectTransform.anchoredPosition = manager.GetPos(x,y);
+    public void SetCoordinate(int newX,int newY)
+    {
+        this.x = newX;
+        this.y = newY;
+    }
+
+    //위치 세팅
+    public void SetPos(Vector2 pos)
+    {
+        myRect.anchoredPosition = pos;
     }
 
 
-    public void Move(int x, int y, float fillTime)
+    //파괴 됐을때 루틴
+    public virtual void DestroyRoutine(bool isIgnore = false)
     {
-
-        if(moveCor != null)
+        if (isIgnore)
         {
-            StopCoroutine(moveCor);
+            EndDestroyAnimation();
+        }
+        else
+        {
+            animator.SetTrigger("Ex");
         }
 
-        moveCor = StartCoroutine(CoMove(x,y,fillTime));
+        
     }
-    public void Move(float fillTime)
+
+    //애니메이션이 끝난 후 처리
+    public void EndDestroyAnimation()
     {
-
-        if (moveCor != null)
-        {
-            StopCoroutine(moveCor);
-        }
-
-        moveCor = StartCoroutine(CoMove(x, y, fillTime));
+        type = PuzzleType.Empty;
+        Destroy(this.gameObject);
     }
 
-
-
-    IEnumerator CoMove(int x,int y, float fillTime)
-    {
-        float curtime = 0.0f;
-        Vector2 startPos = image.rectTransform.anchoredPosition;
-        Vector2 targetPos = manager.GetPos(x, y);
-
-        while(curtime < fillTime)
-        {
-            curtime += Time.deltaTime;
-            image.rectTransform.anchoredPosition = Vector2.Lerp(startPos, targetPos, curtime/fillTime);
-
-            yield return null;
-        }
-
-        image.rectTransform.anchoredPosition = targetPos;
-    }
-
-    bool isClick = false;
-    public void OnPointerDown(PointerEventData eventData)
-    {
-        isClick = true;
-        startpos = eventData.position;
-        Debug.Log("x : " + x + ", " + y);
-    }
-
-    
-
-    Vector2 startpos = Vector2.zero;
-
-    void Swap(int x,int y)
-    {
-        isClick = false;
-
-        manager.puzzles[x, y].x = this.x;
-        manager.puzzles[x, y].y = this.y;
-
-        manager.puzzles[this.x, this.y].x = x;
-        manager.puzzles[this.x, this.y].y = y;
-
-        manager.puzzles[x, y].Move(0.1f);
-        this.Move(0.1f);
-
-      
-    }
-
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        manager.testText.text = this.y.ToString();
-    }
 }
