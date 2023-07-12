@@ -2,17 +2,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class VerticalPuzzle : MonoBehaviour
+public class VerticalPuzzle : Puzzle
 {
-    // Start is called before the first frame update
-    void Start()
+    public override void DestroyRoutine(bool isIgnore = false)
     {
-        
-    }
+        for (int i = 0; i < manager.Y; i++)
+        {
+            Puzzle destroyPuzzle = manager.puzzles[this.x, i];
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+            if (destroyPuzzle == null || destroyPuzzle.type == PuzzleType.Empty || destroyPuzzle == this) continue;
+
+            destroyPuzzle.DestroyRoutine();
+
+        }
+
+        EndDestroyAnimation();
     }
 }

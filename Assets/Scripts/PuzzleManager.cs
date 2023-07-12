@@ -17,29 +17,16 @@ public struct InitPuzzle
 
 public class PuzzleManager : MonoBehaviour
 {
-    //게임 테마(컬러)
-    public PuzzleColor gameTheme;
 
-    //퍼즐 크기
-    public int x;
-    public int y;
 
-    public RectTransform frameRect;
-    public int pSpacing;
-    public GameObject[] puzzlePrefab;
-    public GameObject puzzleBackPrefab;
-    public GameObject obstacle;
-
-    public Sprite[] puzzleSprs;
-    public Sprite[] puzzleBackSprs;
-    public Sprite[] frameSprs;
-
-    public InitPuzzle[] initPuzzles;
-    public Vector2 puzzleSize;
+    [SerializeField]
+    public PuzzleMaker maker;
 
     public Puzzle[,] puzzles;
-
     private Puzzle curPuzzle;
+
+    public int X => maker.x;
+    public int Y => maker.y;
 
     public bool isClick = false;
     public bool isProcess = true;
@@ -58,47 +45,6 @@ public class PuzzleManager : MonoBehaviour
         }
     }
 
-
-
-    private void Awake()
-    {
-        Application.targetFrameRate = 60;
-
-        puzzleSize = puzzleBackPrefab.GetComponent<RectTransform>().sizeDelta;
-
-        frameRect.sizeDelta = new Vector2(puzzleSize.x * x + pSpacing, puzzleSize.y * y + pSpacing);
-        frameRect.GetComponent<Image>().sprite = frameSprs[(int)gameTheme];
-
-
-
-
-
-        puzzles = new Puzzle[x, y];
-
-
-        for (int i = 0; i < x; i++)
-        {
-            for (int j = 0; j < y; j++)
-            {
-                Instantiate(puzzleBackPrefab, frameRect.transform).GetComponent<PuzzleBackGround>().Init(GetPos(i, j), puzzleBackSprs[(int)gameTheme]);
-                //puzzles[i,j] = MakeNewPuzzle(i, j);
-            }
-
-        }
-
-
-        for (int i = 0; i < initPuzzles.Length; i++)
-        {
-            Puzzle newObstacle = Instantiate(obstacle, frameRect.transform).GetComponent<Puzzle>();
-            newObstacle.GetComponent<RectTransform>().anchoredPosition = GetPos(initPuzzles[i].coordinate.x, initPuzzles[i].coordinate.y);
-
-            puzzles[initPuzzles[i].coordinate.x, initPuzzles[i].coordinate.y] = newObstacle;
-
-        }
-
-        Fill();
-
-    }
 
     //채우고 생성하는 함수
     public void Fill()
@@ -131,9 +77,9 @@ public class PuzzleManager : MonoBehaviour
     {
         bool isBlockMove = false;
 
-        for (int i = 0; i < x; i++)
+        for (int i = 0; i < X; i++)
         {
-            for (int j = y - 2; j >= 0; j--) //아래에서 부터 위로 훑고 올라감
+            for (int j = Y - 2; j >= 0; j--) //아래에서 부터 위로 훑고 올라감
             {
 
                 if (puzzles[i, j] == null || puzzles[i, j].type == PuzzleType.Empty || puzzles[i, j].type == PuzzleType.Obstacle) continue;
@@ -155,7 +101,7 @@ public class PuzzleManager : MonoBehaviour
                     {
                         for (int diag = -1; diag <= 1; diag += 2)
                         {
-                            if (i + diag < 0 || i + diag >= x) continue;
+                            if (i + diag < 0 || i + diag >= X) continue;
 
                             Puzzle newDiagPuzzle = puzzles[i + diag, j + 1];
 
@@ -167,23 +113,18 @@ public class PuzzleManager : MonoBehaviour
                                 break;
                             }
                         }
-
                     }
-
-
                 }
-
-
-
             }
         }
 
 
-        for (int i = 0; i < x; i++)
+        //최상단 퍼즐 생성해줌
+        for (int i = 0; i < X; i++)
         {
             if (puzzles[i, 0] == null || puzzles[i, 0].type == PuzzleType.Empty)
             {
-                Puzzle newPuzzle = MakeNewPuzzle(i, -1);
+                Puzzle newPuzzle = maker.MakeNewPuzzle(i, -1);
 
                 newPuzzle.Move(i, 0, 0.1f);
                 puzzles[i, 0] = newPuzzle;
@@ -210,36 +151,14 @@ public class PuzzleManager : MonoBehaviour
     bool CheckIsObstacle(int x, int y)
     {
         //인덱스 범위 넘어가는지 체크
-        if (x < 0 || y < 0 || x >= this.x || y >= this.y)
+        if (x < 0 || y < 0 || x >= this.X || y >= this.Y)
             return false;
 
         if (puzzles[x, y] == null || puzzles[x, y].type != PuzzleType.Obstacle)
             return false;
 
         return true;
-
-
     }
-
-
-    //퍼즐 생성
-    public Puzzle MakeNewPuzzle(int x, int y)
-    {
-        int rand = Random.Range(0, puzzleSprs.Length);
-        Puzzle newPuzzle = Instantiate(puzzlePrefab[rand], frameRect.transform).GetComponent<Puzzle>();
-        newPuzzle.Init(x, y, PuzzleType.Normal, this);
-
-        return newPuzzle;
-    }
-
-
-    //좌표값에 맞는 퍼즐 위치 리턴
-    public Vector2 GetPos(int x, int y)
-    {
-        return new Vector2(x * puzzleSize.x + pSpacing / 2, -y * puzzleSize.y - pSpacing / 2);
-    }
-
-
 
 
     //시계방향으로 검사
@@ -256,9 +175,9 @@ public class PuzzleManager : MonoBehaviour
         List<Puzzle> destoryPuzzle = new List<Puzzle>();
         List<Puzzle> visitPuzzle = new List<Puzzle>();
 
-        for (int i = 0; i < x; i++)
+        for (int i = 0; i < X; i++)
         {
-            for (int j = 0; j < y; j++)
+            for (int j = 0; j < Y; j++)
             {
                 if (visitPuzzle.Contains(puzzles[i, j]) || puzzles[i, j] == null) continue;
 
@@ -276,8 +195,8 @@ public class PuzzleManager : MonoBehaviour
                     {
                         int newX = curPuzzle.x + dx[dir]; //세로
                         int newY = curPuzzle.y + dy[dir]; //가로
-
-                        if (newX < 0 || newY < 0 || newX >= x || newY >= y) continue;
+                        
+                        if (newX < 0 || newY < 0 || newX >= X || newY >= Y) continue;
                         if (visitPuzzle.Contains(puzzles[newX, newY])) continue;
 
                         if (curPuzzle.color == puzzles[newX, newY].color)
@@ -319,7 +238,7 @@ public class PuzzleManager : MonoBehaviour
                                     break;
                             }
 
-                            if (newX < 0 || newY < 0 || newX >= x || newY >= y) break;
+                            if (newX < 0 || newY < 0 || newX >= X || newY >= Y) break;
                             if (visitPuzzle.Contains(puzzles[newX, newY])) break;
                         }
                         while (true);
@@ -350,7 +269,8 @@ public class PuzzleManager : MonoBehaviour
 
                 foreach (Puzzle puzzle in destoryPuzzle)
                 {
-                    for (int dir = 0; dir < 4; dir++)
+                    //동서남북 장애물이 있는지 확인
+                    for (int dir = 0; dir < 4; dir++) 
                     {
                         int newX = puzzle.x + dx[dir]; //세로
                         int newY = puzzle.y + dy[dir]; //가로
@@ -361,8 +281,11 @@ public class PuzzleManager : MonoBehaviour
                         }
                     }
 
-
-                     puzzle.DestroyRoutine();
+                    if(puzzle != null || puzzle.type != PuzzleType.Empty)
+                    {
+                        puzzle.DestroyRoutine();
+                    }
+                     
 
                 }
 
@@ -374,6 +297,4 @@ public class PuzzleManager : MonoBehaviour
 
         return isDestroyBlock;
     }
-
-
 }

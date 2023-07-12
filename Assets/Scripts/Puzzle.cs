@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public enum PuzzleType
 {
-    Empty, Normal, Obstacle, Horizontal, Vertical, Bomb, FindSameColor
+    Normal, Obstacle, Horizontal, Vertical, Bomb, FindSameColor, Empty
 }
 
 public enum PuzzleColor
@@ -25,17 +25,21 @@ public class Puzzle : MonoBehaviour
     public PuzzleColor color;
 
     public RectTransform myRect;
+    private Image myImage;
 
     [SerializeField]
     private Animator animator;
 
+    public Animation[] destroyAnimation;
+
     private MoveablePuzzle moveable;
 
     //매니저
-    private PuzzleManager manager;
+    protected PuzzleManager manager;
 
     private void Awake()
     {
+        myImage = GetComponentInChildren<Image>();
         moveable = this.GetComponent<MoveablePuzzle>();
     }
 
@@ -55,6 +59,27 @@ public class Puzzle : MonoBehaviour
         moveable.Move(fillTime);
     }
 
+    public void SetColor()
+    {
+        int rand = Random.Range(0, manager.maker.puzzleSprs.Length);
+        myImage.sprite = manager.maker.puzzleSprs[rand];
+        color = (PuzzleColor)rand;
+    }
+
+    public void Init(int x, int y, PuzzleManager manager)
+    {
+        this.manager = manager;
+        moveable.SetManager(manager);
+
+        this.x = x;
+        this.y = y;
+
+        this.type = PuzzleType.Normal;
+
+        SetPos(manager.maker.GetPos(x, y));
+        SetColor();
+        //animator.enabled = true;
+    }
 
     //퍼즐 초기화
     public void Init(int x, int y, PuzzleType type, PuzzleManager manager)
@@ -67,7 +92,7 @@ public class Puzzle : MonoBehaviour
 
         this.type = type;
 
-        SetPos(manager.GetPos(x, y));
+        SetPos(manager.maker.GetPos(x, y));
     }
 
     public void SetCoordinate(int newX,int newY)
@@ -92,7 +117,10 @@ public class Puzzle : MonoBehaviour
         }
         else
         {
-            animator.SetTrigger("Ex");
+            animator.enabled = true;
+            //animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            animator.SetTrigger(color.ToString());
+            //animator.SetTrigger("Ex");
         }
 
         

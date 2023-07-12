@@ -10,12 +10,12 @@ GameObject:
   m_Component:
   - component: {fileID: 5882344040426820183}
   - component: {fileID: 2403509980125939799}
-  - component: {fileID: 8081455797112256771}
+  - component: {fileID: 5153527155361491997}
   - component: {fileID: 2191724841915447966}
   - component: {fileID: 8933417496327689312}
-  - component: {fileID: -4044354277151507320}
+  - component: {fileID: -8556042279227948436}
   m_Layer: 5
-  m_Name: PurplePuzzle
+  m_Name: NormalPuzzle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -49,7 +49,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8223133632075617415}
   m_CullTransparentMesh: 1
---- !u!114 &8081455797112256771
+--- !u!114 &5153527155361491997
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -69,7 +69,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 7e81601fe883dbd42a4a294d886cd3d9, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 2bf629bd5e9dcda4184cdfe2a16cad0e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -94,9 +94,10 @@ MonoBehaviour:
   x: 0
   y: 0
   type: 0
-  color: 3
+  color: 0
   myRect: {fileID: 5882344040426820183}
   animator: {fileID: 8933417496327689312}
+  destroyAnimation: []
 --- !u!95 &8933417496327689312
 Animator:
   serializedVersion: 5
@@ -105,9 +106,9 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8223133632075617415}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 22100000, guid: 2ff831d6a3a25cf498745052cf60afed, type: 2}
+  m_Controller: {fileID: 9100000, guid: e1b67a96f9d088f43b22bdc305327a64, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -117,7 +118,7 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
---- !u!114 &-4044354277151507320
+--- !u!114 &-8556042279227948436
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -71,7 +71,7 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
         Vector2 startPos = myPuzzle.myRect.anchoredPosition;
         Vector2 targetPos = Vector2.zero;
 
-        targetPos = manager.GetPos(x, y);
+        targetPos = manager.maker.GetPos(x, y);
 
 
 

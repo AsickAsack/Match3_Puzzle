@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 5882344040426820183}
   - component: {fileID: 2403509980125939799}
   - component: {fileID: 8081455797112256771}
-  - component: {fileID: 2191724841915447966}
   - component: {fileID: 8933417496327689312}
   - component: {fileID: 2937430809620761}
+  - component: {fileID: 7542523691433688758}
   m_Layer: 5
   m_Name: VerticalPuzzle
   m_TagString: Untagged
@@ -69,7 +69,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 759a40239be2c3f4fb7bd4b7efd06444, type: 3}
+  m_Sprite: {fileID: 21300000, guid: aacaa2eb1e2f0f74196219f7e4bf19bd, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -79,24 +79,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &2191724841915447966
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8223133632075617415}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 10255f8d94103694190b93826749f740, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  x: 0
-  y: 0
-  type: 0
-  color: 2
-  myRect: {fileID: 5882344040426820183}
-  animator: {fileID: 8933417496327689312}
 --- !u!95 &8933417496327689312
 Animator:
   serializedVersion: 5
@@ -129,3 +111,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 123467ceb397a0a4fbdda45ddee9a035, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7542523691433688758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8223133632075617415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd96ec58a17b4504eac7bb7945413ffa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  x: 0
+  y: 0
+  type: 4
+  color: 0
+  myRect: {fileID: 5882344040426820183}
+  animator: {fileID: 8933417496327689312}

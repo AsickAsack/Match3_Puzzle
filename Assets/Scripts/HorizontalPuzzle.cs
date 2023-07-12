@@ -2,17 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class HorizontalPuzzle : MonoBehaviour
+public class HorizontalPuzzle : Puzzle
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
 
-    // Update is called once per frame
-    void Update()
+    //°¡·Î ÀüºÎ ÆÄ±«½ÃÅ´
+    public override void DestroyRoutine(bool isIgnore = false)
     {
-        
+        for (int i = 0; i < manager.X; i++)
+        {
+            Puzzle destroyPuzzle = manager.puzzles[i, this.y];
+
+            if (destroyPuzzle == null || destroyPuzzle.type == PuzzleType.Empty || destroyPuzzle == this) continue;
+
+            destroyPuzzle.DestroyRoutine();
+
+        }
+
+        EndDestroyAnimation();
     }
 }

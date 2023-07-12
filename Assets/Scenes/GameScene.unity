@@ -219,7 +219,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1486593018}
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -235,41 +236,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65811ec461dcecf45a47263a42217457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  concept: 1
-  x: 5
-  y: 8
-  frameRect: {fileID: 1700363635}
-  pSpacing: 10
-  puzzlePrefab:
-  - {fileID: 8223133632075617415, guid: 70d0c7808f8ce9a49ae78defbd37c31b, type: 3}
-  - {fileID: 8223133632075617415, guid: d37b3a475a34bef46b8600741e821859, type: 3}
-  - {fileID: 8223133632075617415, guid: 5a11c1abbf1367345a7453abda1a4c39, type: 3}
-  - {fileID: 8223133632075617415, guid: 4d7db52360c0a5c489a772e7b480f1ff, type: 3}
-  puzzleBackPrefab: {fileID: 6232437872295548878, guid: 4d5db8ca09a56564f89010a10eaed05d, type: 3}
-  obstacle: {fileID: 8223133632075617415, guid: fbcab46929587b048bd396936f6b0321, type: 3}
-  puzzleSprs:
-  - {fileID: 21300000, guid: 2bf629bd5e9dcda4184cdfe2a16cad0e, type: 3}
-  - {fileID: 21300000, guid: 6ebd234fd7dfb0c4db9018f50fba058e, type: 3}
-  - {fileID: 21300000, guid: 634ce7526b40aa44ea3770b912f9e7b2, type: 3}
-  - {fileID: 21300000, guid: c9c6dcb1ae8a7aa479ca5381af4e620a, type: 3}
-  puzzleBackSprs:
-  - {fileID: 21300000, guid: a7bdef21b77ecc343a10091f05bf8008, type: 3}
-  - {fileID: 21300000, guid: a69f462564012654db3ba36477825145, type: 3}
-  - {fileID: 21300000, guid: 1bc8a44292281ca48b5bb5a301deede6, type: 3}
-  - {fileID: 21300000, guid: 83a97ead281ce1743a4d40cee304c805, type: 3}
-  frameSprs:
-  - {fileID: 21300000, guid: 828d926c5ab6a85418dc221bcd8915b3, type: 3}
-  - {fileID: 21300000, guid: 590ecaf11dc23b24e8b07bd0a825cc5e, type: 3}
-  - {fileID: 21300000, guid: c5ca60aac3f7e734c927152becacb940, type: 3}
-  - {fileID: 21300000, guid: eb2eb427da5e4c347a2b7e48af072064, type: 3}
-  initPuzzles:
-  - type: 2
-    coordinate: {x: 0, y: 5}
-  - type: 2
-    coordinate: {x: 2, y: 5}
-  - type: 2
-    coordinate: {x: 4, y: 5}
-  puzzleSize: {x: 0, y: 0}
+  maker: {fileID: 1486593019}
   isClick: 0
   isProcess: 0
 --- !u!1 &517854444
@@ -789,6 +756,81 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &1486593017
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1486593018}
+  - component: {fileID: 1486593019}
+  m_Layer: 0
+  m_Name: PuzzleMaker
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1486593018
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1486593017}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 98948994}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1486593019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1486593017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8809bef4c965bb848be62b7b151046f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameTheme: 1
+  manager: {fileID: 98948995}
+  x: 5
+  y: 8
+  frameRect: {fileID: 1700363635}
+  pSpacing: 10
+  puzzleBackPrefab: {fileID: 6232437872295548878, guid: 4d5db8ca09a56564f89010a10eaed05d, type: 3}
+  puzzlePrefab:
+  - {fileID: 8223133632075617415, guid: e12b5a42a2774f544a160b8679341146, type: 3}
+  - {fileID: 8223133632075617415, guid: fbcab46929587b048bd396936f6b0321, type: 3}
+  - {fileID: 8223133632075617415, guid: 09bee7da75531704bbe249d315411999, type: 3}
+  - {fileID: 8223133632075617415, guid: b032320401ec9594eb4c66d5657b60aa, type: 3}
+  - {fileID: 8223133632075617415, guid: 084696a528884b046a70854af57d8845, type: 3}
+  - {fileID: 8223133632075617415, guid: e55debb3e54e0dc4ba6b0515c452d5f5, type: 3}
+  puzzleSprs:
+  - {fileID: 21300000, guid: 2bf629bd5e9dcda4184cdfe2a16cad0e, type: 3}
+  - {fileID: 21300000, guid: 6ebd234fd7dfb0c4db9018f50fba058e, type: 3}
+  - {fileID: 21300000, guid: 634ce7526b40aa44ea3770b912f9e7b2, type: 3}
+  - {fileID: 21300000, guid: c9c6dcb1ae8a7aa479ca5381af4e620a, type: 3}
+  puzzleBackSprs:
+  - {fileID: 21300000, guid: a7bdef21b77ecc343a10091f05bf8008, type: 3}
+  - {fileID: 21300000, guid: a69f462564012654db3ba36477825145, type: 3}
+  - {fileID: 21300000, guid: 1bc8a44292281ca48b5bb5a301deede6, type: 3}
+  - {fileID: 21300000, guid: 83a97ead281ce1743a4d40cee304c805, type: 3}
+  frameSprs:
+  - {fileID: 21300000, guid: 828d926c5ab6a85418dc221bcd8915b3, type: 3}
+  - {fileID: 21300000, guid: 590ecaf11dc23b24e8b07bd0a825cc5e, type: 3}
+  - {fileID: 21300000, guid: c5ca60aac3f7e734c927152becacb940, type: 3}
+  - {fileID: 21300000, guid: eb2eb427da5e4c347a2b7e48af072064, type: 3}
+  initPuzzles: []
+  puzzleSize: {x: 0, y: 0}
 --- !u!1 &1554223404
 GameObject:
   m_ObjectHideFlags: 0
