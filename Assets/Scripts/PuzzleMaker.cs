@@ -36,10 +36,6 @@ public class PuzzleMaker : MonoBehaviour
         frameRect.sizeDelta = new Vector2(puzzleSize.x * x + pSpacing, puzzleSize.y * y + pSpacing);
         frameRect.GetComponent<Image>().sprite = frameSprs[(int)gameTheme];
 
-
-
-
-
         manager.puzzles = new Puzzle[x, y];
 
 
@@ -74,16 +70,15 @@ public class PuzzleMaker : MonoBehaviour
 
 
     //ÆÛÁñ »ý¼º
-    public Puzzle MakeNewPuzzle(int x, int y)
+    public Puzzle MakeNewPuzzle(int x, int y,PuzzleType type)
     {
         /*
-
         int rand = Random.Range(0, puzzleSprs.Length);
         Puzzle newPuzzle = Instantiate(puzzlePrefab[rand], frameRect.transform).GetComponent<Puzzle>();
         newPuzzle.Init(x, y, PuzzleType.Normal, this);*/
 
-        Puzzle newPuzzle = Instantiate(puzzlePrefab[0], frameRect.transform).GetComponent<Puzzle>();
-        newPuzzle.Init(x, y, this.manager);
+        Puzzle newPuzzle = Instantiate(puzzlePrefab[(int)type], frameRect.transform).GetComponent<Puzzle>();
+        newPuzzle.Init(x, y, type ,this.manager);
 
         return newPuzzle;
     }

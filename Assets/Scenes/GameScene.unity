@@ -800,7 +800,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8809bef4c965bb848be62b7b151046f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameTheme: 1
+  gameTheme: 2
   manager: {fileID: 98948995}
   x: 5
   y: 8

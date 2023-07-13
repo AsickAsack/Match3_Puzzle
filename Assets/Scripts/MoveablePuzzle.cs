@@ -9,6 +9,8 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
     private Coroutine moveCor;
 
     private PuzzleManager manager;
+
+
     private int X
     {
         get
@@ -107,7 +109,6 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
     {
         if (manager.isProcess) return;
 
-        Debug.Log("클릭");
 
         manager.CurPuzzle = myPuzzle;
         manager.isClick = true;
@@ -116,23 +117,19 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        Debug.Log("클릭 업");
         manager.isClick = false;
     }
 
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (myPuzzle.type == PuzzleType.Obstacle) return;
 
         if (manager.isProcess == true || manager.isClick == false || manager.CurPuzzle == this || manager.CurPuzzle == null) return;
-
-        Debug.Log("클릭 에터");
 
         StartCoroutine(SwapPuzzleRoutine());
     }
 
-
+    //TODO: 여기 스왑코드 수정
     IEnumerator SwapPuzzleRoutine()
     {
 
@@ -159,6 +156,9 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
 
             if (manager.CheckPuzzle())
             {
+                Debug.Log("필 호출전");
+               // yield return new WaitForSeconds(0.3f);
+                Debug.Log("필 호출후");
                 manager.Fill();
             }
             else
@@ -192,6 +192,9 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
 
             if (manager.CheckPuzzle())
             {
+                Debug.Log("필 호출전");
+                //yield return new WaitForSeconds(0.3f);
+                Debug.Log("필 호출후");
                 manager.Fill();
             }
             else

@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class VerticalPuzzle : Puzzle
 {
+    /*
     public override void DestroyRoutine(bool isIgnore = false)
     {
         for (int i = 0; i < manager.Y; i++)
@@ -18,4 +19,5 @@ public class VerticalPuzzle : Puzzle
 
         EndDestroyAnimation();
     }
+    */
 }

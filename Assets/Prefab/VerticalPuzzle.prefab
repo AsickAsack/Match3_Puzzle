@@ -89,7 +89,7 @@ Animator:
   m_GameObject: {fileID: 8223133632075617415}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 22100000, guid: 251c2cbbf1fee33418821b2965788578, type: 2}
+  m_Controller: {fileID: 9100000, guid: f32fcce8ad7501e42be101553c581d06, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -126,6 +126,7 @@ MonoBehaviour:
   x: 0
   y: 0
   type: 4
-  color: 0
+  color: 2
   myRect: {fileID: 5882344040426820183}
   animator: {fileID: 8933417496327689312}
+  destroyAnimation: []

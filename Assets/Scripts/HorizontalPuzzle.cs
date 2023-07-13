@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class HorizontalPuzzle : Puzzle
 {
-
+    /*
     //°¡·Î ÀüºÎ ÆÄ±«½ÃÅ´
     public override void DestroyRoutine(bool isIgnore = false)
     {
@@ -20,4 +20,5 @@ public class HorizontalPuzzle : Puzzle
 
         EndDestroyAnimation();
     }
+    */
 }

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public enum PuzzleType
 {
-    Normal, Obstacle, Horizontal, Vertical, Bomb, FindSameColor, Empty
+    Normal, Obstacle, Horizontal, Vertical, Bomb, Rainbow, Empty
 }
 
 public enum PuzzleColor
@@ -66,7 +66,7 @@ public class Puzzle : MonoBehaviour
         color = (PuzzleColor)rand;
     }
 
-    public void Init(int x, int y, PuzzleManager manager)
+    public void Init(int x, int y,PuzzleManager manager)
     {
         this.manager = manager;
         moveable.SetManager(manager);
@@ -74,10 +74,8 @@ public class Puzzle : MonoBehaviour
         this.x = x;
         this.y = y;
 
-        this.type = PuzzleType.Normal;
-
         SetPos(manager.maker.GetPos(x, y));
-        SetColor();
+
         //animator.enabled = true;
     }
 
@@ -91,6 +89,10 @@ public class Puzzle : MonoBehaviour
         this.y = y;
 
         this.type = type;
+
+        
+        if (type == PuzzleType.Normal)
+            SetColor();
 
         SetPos(manager.maker.GetPos(x, y));
     }
@@ -117,9 +119,26 @@ public class Puzzle : MonoBehaviour
         }
         else
         {
-            animator.enabled = true;
+            
             //animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            animator.SetTrigger(color.ToString());
+            if (this.type == PuzzleType.Normal)
+            {
+                
+                animator.enabled = true;
+                animator.SetTrigger(color.ToString());
+                //type = PuzzleType.Empty;
+
+            }
+            else
+            {
+                type = PuzzleType.Empty;
+                Destroy(this.gameObject);
+            }
+                
+
+
+            
+            
             //animator.SetTrigger("Ex");
         }
 

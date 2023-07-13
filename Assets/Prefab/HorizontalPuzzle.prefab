@@ -105,10 +105,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   x: 0
   y: 0
-  type: 3
+  type: 2
   color: 2
   myRect: {fileID: 5882344040426820183}
   animator: {fileID: 4845188630903798486}
+  destroyAnimation: []
 --- !u!95 &4845188630903798486
 Animator:
   serializedVersion: 5
@@ -119,7 +120,7 @@ Animator:
   m_GameObject: {fileID: 8223133632075617415}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 329a17366c7d8a7419a386298f77b98a, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BombPuzzle : MonoBehaviour
+public class BombPuzzle : Puzzle
 {
    
 }
