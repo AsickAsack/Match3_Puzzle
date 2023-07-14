@@ -28,7 +28,7 @@ public class Puzzle : MonoBehaviour
     private Image myImage;
 
     [SerializeField]
-    private Animator animator;
+    protected Animator animator;
 
     public Animation[] destroyAnimation;
 
@@ -49,9 +49,9 @@ public class Puzzle : MonoBehaviour
         return moveable != null;
     }
 
-    public void Move(int x,int y,float fillTime)
+    public void Move(int x, int y, float fillTime)
     {
-        moveable.Move(x,y,fillTime);
+        moveable.Move(x, y, fillTime);
     }
 
     public void Move(float fillTime)
@@ -59,48 +59,74 @@ public class Puzzle : MonoBehaviour
         moveable.Move(fillTime);
     }
 
+    public void SetAndMove(int newX, int newY)
+    {
+        SetCoordinate(newX, newY);
+        Move(0.1f);
+    }
+
+    public void SetColor(PuzzleColor color)
+    {
+        switch (type)
+        {
+            case PuzzleType.Normal:
+                myImage.sprite = manager.maker.puzzleSprs[(int)color];
+                break;
+            case PuzzleType.Horizontal:
+                myImage.sprite = manager.maker.horizontalSprs[(int)color];
+                break;
+            case PuzzleType.Vertical:
+                myImage.sprite = manager.maker.verticalSprs[(int)color];
+                break;
+        }
+
+        this.color = color;
+    }
+
+
     public void SetColor()
     {
         int rand = Random.Range(0, manager.maker.puzzleSprs.Length);
+
         myImage.sprite = manager.maker.puzzleSprs[rand];
+
         color = (PuzzleColor)rand;
     }
 
-    public void Init(int x, int y,PuzzleManager manager)
-    {
-        this.manager = manager;
-        moveable.SetManager(manager);
-
-        this.x = x;
-        this.y = y;
-
-        SetPos(manager.maker.GetPos(x, y));
-
-        //animator.enabled = true;
-    }
-
     //퍼즐 초기화
-    public void Init(int x, int y, PuzzleType type, PuzzleManager manager)
+    public void Init(int x, int y, PuzzleType type, PuzzleManager manager, PuzzleColor color = PuzzleColor.None)
     {
         this.manager = manager;
-        moveable.SetManager(manager);
+        if (IsMoveable())
+            moveable.SetManager(manager);
 
         this.x = x;
         this.y = y;
 
         this.type = type;
 
-        
-        if (type == PuzzleType.Normal)
-            SetColor();
+
+        if (this.color != PuzzleColor.None)
+        {
+            if (color == PuzzleColor.None)
+            {
+                SetColor();
+            }
+            else
+            {
+                SetColor(color);
+            }
+        }
+
 
         SetPos(manager.maker.GetPos(x, y));
     }
 
-    public void SetCoordinate(int newX,int newY)
+    public void SetCoordinate(int newX, int newY)
     {
         this.x = newX;
         this.y = newY;
+
     }
 
     //위치 세팅
@@ -119,36 +145,21 @@ public class Puzzle : MonoBehaviour
         }
         else
         {
-            
-            //animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            if (this.type == PuzzleType.Normal)
-            {
-                
-                animator.enabled = true;
-                animator.SetTrigger(color.ToString());
-                //type = PuzzleType.Empty;
 
-            }
-            else
-            {
-                type = PuzzleType.Empty;
-                Destroy(this.gameObject);
-            }
-                
+            manager.puzzles[x, y] = null;
 
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            animator.SetTrigger(color.ToString());
 
-            
-            
-            //animator.SetTrigger("Ex");
         }
 
-        
+
     }
 
     //애니메이션이 끝난 후 처리
     public void EndDestroyAnimation()
     {
-        type = PuzzleType.Empty;
+        //type = PuzzleType.Empty;
         Destroy(this.gameObject);
     }
 

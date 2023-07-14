@@ -10,12 +10,11 @@ GameObject:
   m_Component:
   - component: {fileID: 5882344040426820183}
   - component: {fileID: 2403509980125939799}
-  - component: {fileID: 5153527155361491997}
-  - component: {fileID: 2191724841915447966}
-  - component: {fileID: 8933417496327689312}
-  - component: {fileID: -8556042279227948436}
+  - component: {fileID: 8081455797112256771}
+  - component: {fileID: 8638388734361058135}
+  - component: {fileID: 4391173192693991363}
   m_Layer: 5
-  m_Name: NormalPuzzle
+  m_Name: Obstacle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -49,7 +48,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8223133632075617415}
   m_CullTransparentMesh: 1
---- !u!114 &5153527155361491997
+--- !u!114 &8081455797112256771
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -69,7 +68,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 2bf629bd5e9dcda4184cdfe2a16cad0e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 17b0a32ac36cf9042ba17773e702afac, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -79,7 +78,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &2191724841915447966
+--- !u!114 &8638388734361058135
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -88,17 +87,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 8223133632075617415}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 10255f8d94103694190b93826749f740, type: 3}
+  m_Script: {fileID: 11500000, guid: cb9dd450df067db44899fce6cbed3c1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   x: 0
   y: 0
-  type: 0
-  color: 0
+  type: 1
+  color: 4
   myRect: {fileID: 5882344040426820183}
-  animator: {fileID: 8933417496327689312}
+  animator: {fileID: 4391173192693991363}
   destroyAnimation: []
---- !u!95 &8933417496327689312
+--- !u!95 &4391173192693991363
 Animator:
   serializedVersion: 5
   m_ObjectHideFlags: 0
@@ -106,9 +105,9 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8223133632075617415}
-  m_Enabled: 0
+  m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: e1b67a96f9d088f43b22bdc305327a64, type: 2}
+  m_Controller: {fileID: 9100000, guid: ff90efc8907ff2c44a31997505ef08e5, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -118,15 +117,3 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
---- !u!114 &-8556042279227948436
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8223133632075617415}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 123467ceb397a0a4fbdda45ddee9a035, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

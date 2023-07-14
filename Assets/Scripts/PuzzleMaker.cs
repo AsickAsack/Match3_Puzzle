@@ -21,6 +21,8 @@ public class PuzzleMaker : MonoBehaviour
     public GameObject[] puzzlePrefab;
 
     public Sprite[] puzzleSprs;
+    public Sprite[] verticalSprs;
+    public Sprite[] horizontalSprs;
     public Sprite[] puzzleBackSprs;
     public Sprite[] frameSprs;
 
@@ -70,15 +72,11 @@ public class PuzzleMaker : MonoBehaviour
 
 
     //ÆÛÁñ »ý¼º
-    public Puzzle MakeNewPuzzle(int x, int y,PuzzleType type)
+    public Puzzle MakeNewPuzzle(int x, int y,PuzzleType type,PuzzleColor color = PuzzleColor.None)
     {
-        /*
-        int rand = Random.Range(0, puzzleSprs.Length);
-        Puzzle newPuzzle = Instantiate(puzzlePrefab[rand], frameRect.transform).GetComponent<Puzzle>();
-        newPuzzle.Init(x, y, PuzzleType.Normal, this);*/
 
         Puzzle newPuzzle = Instantiate(puzzlePrefab[(int)type], frameRect.transform).GetComponent<Puzzle>();
-        newPuzzle.Init(x, y, type ,this.manager);
+        newPuzzle.Init(x, y, type ,this.manager, color);
 
         return newPuzzle;
     }

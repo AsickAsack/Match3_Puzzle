@@ -12,10 +12,9 @@ GameObject:
   - component: {fileID: 2403509980125939799}
   - component: {fileID: 8081455797112256771}
   - component: {fileID: 8933417496327689312}
-  - component: {fileID: 2937430809620761}
-  - component: {fileID: 7542523691433688758}
+  - component: {fileID: 4204946115516247645}
   m_Layer: 5
-  m_Name: VerticalPuzzle
+  m_Name: BombEffect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -30,7 +29,7 @@ RectTransform:
   m_GameObject: {fileID: 8223133632075617415}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 3, y: 3, z: 3}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -69,7 +68,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: aacaa2eb1e2f0f74196219f7e4bf19bd, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0608253a843d6b448a3a62c896cd76a0, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -89,7 +88,7 @@ Animator:
   m_GameObject: {fileID: 8223133632075617415}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: f32fcce8ad7501e42be101553c581d06, type: 2}
+  m_Controller: {fileID: 9100000, guid: 7317c14d08bfddc41b6dae0265320506, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -99,7 +98,7 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
---- !u!114 &2937430809620761
+--- !u!114 &4204946115516247645
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -108,25 +107,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 8223133632075617415}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 123467ceb397a0a4fbdda45ddee9a035, type: 3}
+  m_Script: {fileID: 11500000, guid: 4f95b3d432e8e7744a4fd402997a4c21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &7542523691433688758
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8223133632075617415}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd96ec58a17b4504eac7bb7945413ffa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  x: 0
-  y: 0
-  type: 4
-  color: 2
-  myRect: {fileID: 5882344040426820183}
-  animator: {fileID: 8933417496327689312}
-  destroyAnimation: []

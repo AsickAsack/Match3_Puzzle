@@ -819,6 +819,16 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 6ebd234fd7dfb0c4db9018f50fba058e, type: 3}
   - {fileID: 21300000, guid: 634ce7526b40aa44ea3770b912f9e7b2, type: 3}
   - {fileID: 21300000, guid: c9c6dcb1ae8a7aa479ca5381af4e620a, type: 3}
+  verticalSprs:
+  - {fileID: 21300000, guid: dd94e779115651c47a46d73e4a366d08, type: 3}
+  - {fileID: 21300000, guid: 683d38ddcc4a34b4db1a1e051f02c1d6, type: 3}
+  - {fileID: 21300000, guid: aacaa2eb1e2f0f74196219f7e4bf19bd, type: 3}
+  - {fileID: 21300000, guid: 0e3a0cec0d50f6c4f83b289e99106731, type: 3}
+  horizontalSprs:
+  - {fileID: 21300000, guid: 0112f5fe0bab301448a941efa1f77bf6, type: 3}
+  - {fileID: 21300000, guid: b3d624c2626755148acc32919fb17e03, type: 3}
+  - {fileID: 21300000, guid: ec4d713634a720c43bb5ce1e8b3c1643, type: 3}
+  - {fileID: 21300000, guid: 96f4bf118351b0b46b9eb45bb02ae896, type: 3}
   puzzleBackSprs:
   - {fileID: 21300000, guid: a7bdef21b77ecc343a10091f05bf8008, type: 3}
   - {fileID: 21300000, guid: a69f462564012654db3ba36477825145, type: 3}
@@ -829,7 +839,19 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 590ecaf11dc23b24e8b07bd0a825cc5e, type: 3}
   - {fileID: 21300000, guid: c5ca60aac3f7e734c927152becacb940, type: 3}
   - {fileID: 21300000, guid: eb2eb427da5e4c347a2b7e48af072064, type: 3}
-  initPuzzles: []
+  initPuzzles:
+  - type: 1
+    coordinate: {x: 1, y: 3}
+  - type: 1
+    coordinate: {x: 2, y: 3}
+  - type: 4
+    coordinate: {x: 2, y: 2}
+  - type: 4
+    coordinate: {x: 1, y: 2}
+  - type: 1
+    coordinate: {x: 3, y: 3}
+  - type: 4
+    coordinate: {x: 3, y: 2}
   puzzleSize: {x: 0, y: 0}
 --- !u!1 &1554223404
 GameObject:

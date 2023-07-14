@@ -4,20 +4,21 @@ using UnityEngine;
 
 public class VerticalPuzzle : Puzzle
 {
-    /*
     public override void DestroyRoutine(bool isIgnore = false)
     {
+
+        manager.puzzles[this.x, this.y] = null;
+
         for (int i = 0; i < manager.Y; i++)
         {
-            Puzzle destroyPuzzle = manager.puzzles[this.x, i];
 
-            if (destroyPuzzle == null || destroyPuzzle.type == PuzzleType.Empty || destroyPuzzle == this) continue;
-
-            destroyPuzzle.DestroyRoutine();
-
+            if (manager.puzzles[this.x, i] != null)
+            {
+                manager.puzzles[this.x, i].DestroyRoutine();
+            }
         }
 
-        EndDestroyAnimation();
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        animator.SetTrigger(color.ToString());
     }
-    */
 }

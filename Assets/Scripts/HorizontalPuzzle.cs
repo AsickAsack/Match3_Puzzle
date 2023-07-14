@@ -4,21 +4,23 @@ using UnityEngine;
 
 public class HorizontalPuzzle : Puzzle
 {
-    /*
-    //°¡·Î ÀüºÎ ÆÄ±«½ÃÅ´
+
     public override void DestroyRoutine(bool isIgnore = false)
     {
+
+        manager.puzzles[this.x, this.y] = null;
+
         for (int i = 0; i < manager.X; i++)
         {
-            Puzzle destroyPuzzle = manager.puzzles[i, this.y];
 
-            if (destroyPuzzle == null || destroyPuzzle.type == PuzzleType.Empty || destroyPuzzle == this) continue;
-
-            destroyPuzzle.DestroyRoutine();
-
+            if (manager.puzzles[i, this.y] != null)
+            {
+                manager.puzzles[i, this.y].DestroyRoutine();
+            }
         }
 
-        EndDestroyAnimation();
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        animator.SetTrigger(color.ToString());
     }
-    */
+
 }

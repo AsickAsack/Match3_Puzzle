@@ -88,27 +88,10 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
         myPuzzle.myRect.anchoredPosition = targetPos;
     }
 
-    void Swap(int x, int y)
-    {
-
-        manager.puzzles[x, y].x = X;
-        manager.puzzles[x, y].y = Y;
-
-        manager.puzzles[myPuzzle.x, myPuzzle.y].x = x;
-        manager.puzzles[X, Y].y = y;
-
-        manager.puzzles[x, y].Move(0.1f);
-        this.Move(0.1f);
-
-
-    }
-
-
 
     public void OnPointerDown(PointerEventData eventData)
     {
         if (manager.isProcess) return;
-
 
         manager.CurPuzzle = myPuzzle;
         manager.isClick = true;
@@ -126,93 +109,11 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
 
         if (manager.isProcess == true || manager.isClick == false || manager.CurPuzzle == this || manager.CurPuzzle == null) return;
 
-        StartCoroutine(SwapPuzzleRoutine());
+            manager.SwapPuzzle(this.myPuzzle);   
+       
     }
 
-    //TODO: 여기 스왑코드 수정
-    IEnumerator SwapPuzzleRoutine()
-    {
 
-
-        int newX = manager.CurPuzzle.x;
-        int newY = manager.CurPuzzle.y;
-        Puzzle targetPuzzle = manager.CurPuzzle;
-        manager.CurPuzzle = null;
-
-        if (newX == X && (newY == Y - 1 || newY == Y + 1))
-        {
-            targetPuzzle.x = X;
-            targetPuzzle.y = Y;
-
-            X = newX;
-            Y = newY;
-
-            targetPuzzle.Move(0.1f);
-            this.Move(0.1f);
-
-            yield return new WaitForSeconds(0.15f);
-
-
-
-            if (manager.CheckPuzzle())
-            {
-                Debug.Log("필 호출전");
-               // yield return new WaitForSeconds(0.3f);
-                Debug.Log("필 호출후");
-                manager.Fill();
-            }
-            else
-            {
-
-                X = targetPuzzle.x;
-                Y = targetPuzzle.y;
-
-                targetPuzzle.x = newX;
-                targetPuzzle.y = newY;
-
-                targetPuzzle.Move(0.1f);
-                this.Move(0.1f);
-                yield return new WaitForSeconds(0.15f);
-            }
-
-            manager.isClick = false;
-        }
-        else if (newY == Y && (newX == X - 1 || newX == X + 1))
-        {
-            targetPuzzle.x = X;
-            targetPuzzle.y = Y;
-
-            X = newX;
-            Y = newY;
-
-            targetPuzzle.Move(0.1f);
-            this.Move(0.1f);
-            yield return new WaitForSeconds(0.15f);
-
-
-            if (manager.CheckPuzzle())
-            {
-                Debug.Log("필 호출전");
-                //yield return new WaitForSeconds(0.3f);
-                Debug.Log("필 호출후");
-                manager.Fill();
-            }
-            else
-            {
-                X = targetPuzzle.x;
-                Y = targetPuzzle.y;
-
-                targetPuzzle.x = newX;
-                targetPuzzle.y = newY;
-
-                targetPuzzle.Move(0.1f);
-                this.Move(0.1f);
-                yield return new WaitForSeconds(0.15f);
-            }
-            manager.isClick = false;
-        }
-
-    }
 
 
 }
