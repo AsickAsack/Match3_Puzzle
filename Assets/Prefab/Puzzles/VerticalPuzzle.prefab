@@ -130,3 +130,4 @@ MonoBehaviour:
   myRect: {fileID: 5882344040426820183}
   animator: {fileID: 8933417496327689312}
   destroyAnimation: []
+  effect: {fileID: 8223133632075617415, guid: 8a3e9d06cc52e3e41b366edacfd1d9d4, type: 3}

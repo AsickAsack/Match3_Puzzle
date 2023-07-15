@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.Events;
 public class BombPuzzle : Puzzle
 {
     public GameObject explosionEffect;
 
 
 
-    public override void DestroyRoutine(bool isIgnore = false)
+    public override void DestroyRoutine(bool isIgnore = false, UnityAction callBack = null)
     {
         Instantiate(explosionEffect,this.transform.parent).GetComponent<RectTransform>().anchoredPosition = manager.maker.GetPos(this.x-1,this.y-1);
 

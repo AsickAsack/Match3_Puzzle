@@ -8,4 +8,9 @@ public class Effect : MonoBehaviour
     {
         Destroy(gameObject);
     }
+
+    public void EndEffectParent()
+    {
+        Destroy(this.transform.parent.gameObject);
+    }
 }

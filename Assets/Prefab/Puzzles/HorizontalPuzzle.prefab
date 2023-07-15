@@ -110,6 +110,7 @@ MonoBehaviour:
   myRect: {fileID: 5882344040426820183}
   animator: {fileID: 4845188630903798486}
   destroyAnimation: []
+  effect: {fileID: 8223133632075617415, guid: 8a3e9d06cc52e3e41b366edacfd1d9d4, type: 3}
 --- !u!95 &4845188630903798486
 Animator:
   serializedVersion: 5

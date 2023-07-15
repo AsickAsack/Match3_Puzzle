@@ -1,11 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class VerticalPuzzle : Puzzle
 {
-    public override void DestroyRoutine(bool isIgnore = false)
+    public GameObject effect;
+
+    public override void DestroyRoutine(bool isIgnore = false, UnityAction callBack = null)
     {
+        Instantiate(effect, this.transform.position, Quaternion.identity, this.transform.parent).GetComponent<CrossEffect>().SetAndShoot(Vector2.up);
+        Instantiate(effect, this.transform.position, Quaternion.identity, this.transform.parent).GetComponent<CrossEffect>().SetAndShoot(Vector2.down);
 
         manager.puzzles[this.x, this.y] = null;
 

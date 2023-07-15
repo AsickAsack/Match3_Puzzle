@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 
 public enum PuzzleType
@@ -137,22 +138,22 @@ public class Puzzle : MonoBehaviour
 
 
     //ÆÄ±« µÆÀ»¶§ ·çÆ¾
-    public virtual void DestroyRoutine(bool isIgnore = false)
+    public virtual void DestroyRoutine(bool isIgnore = false,UnityAction callBack = null)
     {
+        manager.puzzles[x, y] = null;
+
         if (isIgnore)
         {
             EndDestroyAnimation();
         }
         else
         {
-
-            manager.puzzles[x, y] = null;
-
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             animator.SetTrigger(color.ToString());
 
         }
 
+        callBack?.Invoke();
 
     }
 
@@ -161,6 +162,69 @@ public class Puzzle : MonoBehaviour
     {
         //type = PuzzleType.Empty;
         Destroy(this.gameObject);
+    }
+
+    Coroutine twinkle = null;
+
+    public void Twinkle(bool isStart = true)
+    {
+        if(isStart)
+        {
+            if (twinkle != null)
+            {
+                StopCoroutine(twinkle);
+            }
+
+            twinkle = StartCoroutine(TwinkleCo());
+        }
+        else
+        {
+            if (twinkle != null)
+            {
+                StopCoroutine(twinkle);
+            }
+
+            Color color = myImage.color;
+
+            color.a = 1.0f;
+            myImage.color = color;
+
+        }
+        
+    }
+
+    IEnumerator TwinkleCo()
+    {
+
+        while (true)
+        {
+
+            while(myImage.color.a > 0.25f)
+            {
+                Color color = myImage.color;
+
+                color.a -= Time.deltaTime;
+                myImage.color = color;
+
+                yield return null;
+            }
+
+            while (myImage.color.a < 1.0f)
+            {
+
+                Color color = myImage.color;
+
+                color.a += Time.deltaTime;
+                myImage.color = color;
+
+                yield return null;
+            }
+
+            yield return null;
+
+        }
+
+
     }
 
 }

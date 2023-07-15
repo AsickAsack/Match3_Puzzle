@@ -1,10 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.ConstrainedExecution;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
-
+using UnityEngine.SceneManagement;
 
 
 
@@ -48,27 +46,27 @@ public class PuzzleManager : MonoBehaviour
         }
     }
 
+    Coroutine fillco = null;
 
     //채우고 생성하는 함수
     public void Fill()
     {
-        Debug.Log("필호출");
-        StartCoroutine(FillCor());
-    }
+        if (fillco == null)
+        {
+            fillco = StartCoroutine(FillCor());
+        }
 
-    bool needFill = false;
+    }
 
     IEnumerator FillCor()
     {
         isProcess = true;
         bool needFill = true;
 
-        Debug.Log("호출됨");
         while (needFill)
         {
             while (FillRoutine())
             {
-                Debug.Log("호출됨2");
                 //내려오는 시간 0.1초 기다려줘야함
                 yield return new WaitForSeconds(0.1f);
             }
@@ -78,6 +76,9 @@ public class PuzzleManager : MonoBehaviour
         }
 
         isProcess = false;
+        fillco = null;
+
+        FindMatchToUser();
     }
 
 
@@ -286,7 +287,7 @@ public class PuzzleManager : MonoBehaviour
 
                     if ((rewardType == PuzzleType.Empty || (int)rewardType < 2) && ((find[0].Count + find[2].Count >= 3) || (find[1].Count + find[3].Count >= 3)))
                     {
-                        Debug.Log("버티컬?");
+
                         rewardPuzzles.Clear();
                         rewardPuzzles.Add(curPuzzle);
 
@@ -334,16 +335,20 @@ public class PuzzleManager : MonoBehaviour
                 specialList.AddRange(destroyPuzzles.FindAll(x => x.type == PuzzleType.Vertical));
                 specialList.AddRange(destroyPuzzles.FindAll(x => x.type == PuzzleType.Horizontal));
 
-                if(specialList.Count >=1)
+                if (specialList.Count >= 1)
                 {
                     isDestroyBlock = true;
-                    foreach(Puzzle p in specialList)
+                    foreach (Puzzle p in specialList)
                     {
                         p.DestroyRoutine();
                     }
-                    destroyPuzzles.Clear();
+
                     rewardPuzzles.Clear();
+                    /*
+                    destroyPuzzles.Clear();
+                    
                     continue;
+                    */
 
                 }
 
@@ -399,7 +404,8 @@ public class PuzzleManager : MonoBehaviour
     public void SwapPuzzle(Puzzle swapPuzzle)
     {
         isClick = false;
-        isProcess = true;
+
+        TwinklePuzzles(false);
 
         int newX = curPuzzle.x;
         int newY = curPuzzle.y;
@@ -414,9 +420,9 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
-    IEnumerator SwapPuzzleCor(int newX,int newY, Puzzle swapPuzzle)
+    IEnumerator SwapPuzzleCor(int newX, int newY, Puzzle swapPuzzle)
     {
-
+        isProcess = true;
         curPuzzle.SetAndMove(swapPuzzle.x, swapPuzzle.y);
         swapPuzzle.SetAndMove(newX, newY);
 
@@ -436,11 +442,11 @@ public class PuzzleManager : MonoBehaviour
                 curPuzzle.DestroyRoutine();
             }
 
-
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.1f);
             Fill();
-            isProcess = false;
+
             yield break;
+
         }
 
 
@@ -482,7 +488,7 @@ public class PuzzleManager : MonoBehaviour
 
             yield return new WaitForSeconds(0.2f);
             Fill();
-            isProcess = false;
+
             yield break;
         }
 
@@ -496,12 +502,726 @@ public class PuzzleManager : MonoBehaviour
         {
             swapPuzzle.SetAndMove(curPuzzle.x, curPuzzle.y);
             curPuzzle.SetAndMove(newX, newY);
+            isProcess = false;
         }
 
 
 
         curPuzzle = null;
-        isProcess = false;
+
     }
+
+
+    public void ReStart()
+    {
+        SceneManager.LoadSceneAsync(0);
+    }
+
+
+    public void TwinklePuzzles(bool isStart)
+    {
+        foreach(Puzzle p in hintPuzzles)
+        {
+            p.Twinkle(isStart);
+        }
+
+        if(isStart == false)
+        {
+            hintPuzzles.Clear();
+        }
+    }
+
+
+    //맞는거 찾기
+    public void FindMatchToUser()
+    {
+        // 5개 -> L자 -> 4개 -> 3개 순. 없으면 다 뿌수고 리필.
+
+        if (FindMatch5())
+        {
+            TwinklePuzzles(true);
+            Debug.Log("5개찾음");
+            return;
+        }
+
+        if (FindMatchL())
+        {
+            TwinklePuzzles(true);
+            Debug.Log("L자 찾음");
+            return;
+        }
+        if (FindMatch4())
+        {
+            TwinklePuzzles(true);
+            Debug.Log("4개찾음");
+            return;
+
+        }
+        if (FindMatch3())
+        {
+            TwinklePuzzles(true);
+            Debug.Log("3개찾음");
+            return;
+        }
+
+        Debug.Log("암거도없음;");
+        /*
+        //없으면 다 부수고 리필
+
+        for (int j = 0; j < Y; j++)
+        {
+            for (int i = 0; i < X; i++)
+            {
+                Destroy(puzzles[i, j].gameObject);
+                puzzles[i, j] = null;
+            }
+        }
+
+        Fill();
+        */
+    }
+
+    List<Puzzle> hintPuzzles = new List<Puzzle>();
+
+    public bool FindMatch5()
+    {
+
+
+        for (int j = 0; j < Y; j++)
+        {
+            for (int i = 0; i < X; i++)
+            {
+                List<Puzzle> findPuzzle = new List<Puzzle>();
+                Puzzle curPuzzle = puzzles[i, j];
+
+                if (curPuzzle == null || !curPuzzle.IsMoveable() || curPuzzle.color == PuzzleColor.None) continue;
+
+                for (int k = 0; k < 4; k++)
+                {
+                    int newX = curPuzzle.x + dx[k];
+                    int newY = curPuzzle.y + dy[k];
+
+                    //동서남북으로 해야함;
+                    //if (curPuzzle.x + 4 >= X || curPuzzle.y + 4 >= Y) continue;
+
+
+                    for (int l = 0; l < 4; l++)
+                    {
+                        if (newX < 0 || newY < 0 || newX >= X || newY >= Y) break;
+                        //if (puzzles[newX, newY] == null || puzzles[newX, newY].color == PuzzleColor.None) continue;
+
+                        findPuzzle.Add(puzzles[newX, newY]);
+
+                        newX += dx[k];
+                        newY += dy[k];
+
+
+                    }
+
+                    if (findPuzzle.Count == 4)
+                    {
+
+                        if (findPuzzle.FindAll(x => x.color == curPuzzle.color).Count == 3)
+                        {
+                            Debug.Log("찾았다 같은거 3개");
+                            Puzzle anotherPuzzle = findPuzzle.Find(x => x.color != curPuzzle.color);
+                            findPuzzle.Remove(anotherPuzzle);
+
+                            for (int h = -1; h <= 1; h += 2)
+                            {
+                                //위아래 검사니까 가로를 체크해봐야함
+                                if (k == 0 || k == 2)
+                                {
+                                    if (anotherPuzzle.x + h < 0 || anotherPuzzle.x + h >= X) continue;
+
+                                    if (puzzles[anotherPuzzle.x + h, anotherPuzzle.y].color == curPuzzle.color)
+                                    {
+                                        findPuzzle.Add(puzzles[anotherPuzzle.x + h, anotherPuzzle.y]);
+                                        findPuzzle.Add(curPuzzle);
+
+                                        hintPuzzles.AddRange(findPuzzle);
+                                        
+
+
+                                        return true;
+                                    }
+                                }
+                                else //왼오검사니까 세로를 체크해봐야함
+                                {
+                                    if (anotherPuzzle.y + h < 0 || anotherPuzzle.y + h >= Y) continue;
+
+                                    if (puzzles[anotherPuzzle.x, anotherPuzzle.y + h].color == curPuzzle.color)
+                                    {
+                                        findPuzzle.Add(puzzles[anotherPuzzle.x, anotherPuzzle.y + h]);
+                                        findPuzzle.Add(curPuzzle);
+                                        foreach (Puzzle p in findPuzzle)
+                                        {
+                                            Debug.Log(p.x + "," + p.y);
+                                        }
+                                        hintPuzzles.AddRange(findPuzzle);
+                                        return true;
+                                    }
+                                }
+                            }
+
+                            findPuzzle.Clear();
+                            continue;
+                        }
+                        else
+                        {
+                            findPuzzle.Clear();
+                            continue;
+                        }
+
+                    }
+                    else
+                    {
+                        findPuzzle.Clear();
+                        continue;
+                    }
+                }
+
+            }
+        }
+
+
+        return false;
+    }
+
+    public bool IsOutOfIndex(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= X || y >= Y) return true;
+
+        return false;
+    }
+
+    public bool FindMatchL()
+    {
+        List<Puzzle> findPuzzle = new List<Puzzle>();
+
+
+        for (int j = 0; j < Y; j++)
+        {
+            for (int i = 0; i < X; i++)
+            {
+                Puzzle curPuzzle = puzzles[i, j];
+
+                if (curPuzzle == null || curPuzzle.color == PuzzleColor.None) continue;
+                if (IsOutOfIndex(i, j + 3)) continue;
+
+                (bool isTrueShape, Puzzle[] puzzleList) result = isLShape(i, j);
+
+                if (result.isTrueShape) // 왼쪽 맨아래 체크
+                {
+                    findPuzzle.AddRange(result.puzzleList);
+
+                    hintPuzzles.AddRange(findPuzzle);
+                    return true;
+                }
+
+                result = isReverseLShape(i, j);
+
+                if (result.isTrueShape) // 왼쪽 맨아래 체크
+                {
+                    findPuzzle.AddRange(result.puzzleList);
+                    hintPuzzles.AddRange(findPuzzle);
+                    return true;
+                }
+
+
+
+            }
+        }
+
+
+
+
+
+
+
+
+
+        (bool, Puzzle[]) isLShape(int x, int y)
+        {
+            if (IsOutOfIndex(x + 2, y) || IsOutOfIndex(x, y + 2)) return (false, null);
+
+            Puzzle curpuzzle = puzzles[x, y];
+
+            if (puzzles[x, y + 1].color == curpuzzle.color && puzzles[x, y + 2].color != curpuzzle.color
+                && puzzles[x + 1, y + 2].color == curpuzzle.color && puzzles[x + 2, y + 2].color == curpuzzle.color)
+            {
+
+                if (!IsOutOfIndex(x - 1, y + 2) && puzzles[x - 1, y + 2].color == curpuzzle.color)
+                {
+                    return (true, new Puzzle[] { curpuzzle, puzzles[x, y + 1], puzzles[x + 1, y + 2], puzzles[x + 2, y + 2], puzzles[x - 1, y + 2] });
+                }
+                else if (!IsOutOfIndex(x, y + 3) && puzzles[x, y + 3].color == curpuzzle.color)
+                {
+                    return (true, new Puzzle[] { curpuzzle, puzzles[x, y + 1], puzzles[x + 1, y + 2], puzzles[x + 2, y + 2], puzzles[x, y + 3] });
+                }
+
+            }
+
+            return (false, null);
+
+        }
+
+        (bool, Puzzle[]) isReverseLShape(int x, int y)
+        {
+            if (IsOutOfIndex(x - 2, y) || IsOutOfIndex(x, y + 2)) return (false,null);
+
+            Puzzle curpuzzle = puzzles[x, y];
+
+            if(puzzles[x, y + 1].color == curpuzzle.color && puzzles[x, y + 2].color != curpuzzle.color
+                && puzzles[x - 1, y + 2].color == curpuzzle.color && puzzles[x - 2, y + 2].color == curpuzzle.color)
+            {
+                if (!IsOutOfIndex(x + 1, y + 2) && puzzles[x + 1, y + 2].color == curpuzzle.color)
+                {
+                    return (true, new Puzzle[] { curpuzzle, puzzles[x, y + 1], puzzles[x - 1, y + 2], puzzles[x - 2, y + 2], puzzles[x + 1, y + 2] });
+                }
+                else if (!IsOutOfIndex(x, y + 3) && puzzles[x, y + 3].color == curpuzzle.color)
+                {
+                    return (true, new Puzzle[] { curpuzzle, puzzles[x, y + 1], puzzles[x - 1, y + 2], puzzles[x - 2, y + 2], puzzles[x, y + 3] });
+                }
+            }
+
+
+            return (false, null);
+        }
+
+        /*
+        for (int j = 0; j < Y; j++)
+        {
+            for (int i = 0; i < X; i++)
+            {
+                Puzzle curPuzzle = puzzles[i, j];
+
+                if (curPuzzle == null || curPuzzle.color == PuzzleColor.None) continue;
+                if (IsOutOfIndex(i, j + 2)) continue;
+                if (puzzles[i, j + 1].color != puzzles[i, j + 2].color) continue;
+
+                List<Puzzle> downPuzzles = new List<Puzzle>();
+
+                downPuzzles.Add(puzzles[i, j + 1]);
+                downPuzzles.Add(puzzles[i, j + 2]);
+
+                if (IsOutOfIndex(i-2, j) || puzzles[i-1, j].color != puzzles[i-2, j].color) continue;
+
+                List<Puzzle> leftPuzzles = new List<Puzzle>();
+
+                leftPuzzles.Add(puzzles[i-1, j]);
+                leftPuzzles.Add(puzzles[i-2, j]);
+
+                if (downPuzzles[0].color == leftPuzzles[0].color)
+                {
+                    //왼쪽이니까  오른쪽이랑 위 검사해야함.
+
+                    bool isMatch = false;
+
+                    if(!IsOutOfIndex(i, j-1) && downPuzzles[0].color == puzzles[i, j - 1].color)
+                    {
+                        isMatch = true;
+                        findPuzzle.Add(puzzles[i, j - 1]);
+
+                    }
+                    else if(!IsOutOfIndex(i+1, j) && downPuzzles[0].color == puzzles[i+1,j].color)
+                    {
+                        isMatch = true;
+                        findPuzzle.Add(puzzles[i+1, j]);
+                    }
+
+                    if(isMatch)
+                    {
+                        findPuzzle.AddRange(downPuzzles);
+                        findPuzzle.AddRange(leftPuzzles);
+
+                        return true;
+                    }
+
+
+                }
+
+
+                if (!IsOutOfIndex(i + 2, j) || puzzles[i + 1, j].color != puzzles[i + 2, j].color) continue;
+
+                List<Puzzle> rightPuzzles = new List<Puzzle>();
+
+                rightPuzzles.Add(puzzles[i + 1, j]);
+                rightPuzzles.Add(puzzles[i + 2, j]);
+
+
+                if (downPuzzles[0].color == rightPuzzles[0].color)
+                {
+                    //오른쪽이니까 왼쪽이랑 위 검사해야함.
+
+                    bool isMatch = false;
+
+                    if (!IsOutOfIndex(i, j - 1) && downPuzzles[0].color == puzzles[i, j - 1].color)
+                    {
+                        isMatch = true;
+                        findPuzzle.Add(puzzles[i, j - 1]);
+
+                    }
+                    else if (downPuzzles[0].color == puzzles[i - 1, j].color)
+                    {
+                        isMatch = true;
+                        findPuzzle.Add(puzzles[i - 1, j]);
+                    }
+
+                    if (isMatch)
+                    {
+                        findPuzzle.AddRange(downPuzzles);
+                        findPuzzle.AddRange(leftPuzzles);
+
+                        return true;
+                    }
+
+                }
+            }
+        }
+        */
+
+        /*
+        for (int j = 0; j < Y; j++)
+        {
+            for (int i = 0; i < X; i++)
+            {
+                Puzzle curPuzzle = puzzles[i, j];
+
+                if (curPuzzle == null || curPuzzle.color == PuzzleColor.None) continue;
+                if (IsOutOfIndex(i, j + 2)) continue;
+                if (puzzles[i, j + 1].color != curPuzzle.color || puzzles[i, j + 2].color == curPuzzle.color) continue;
+
+                //왼쪽 검사
+                if (!IsOutOfIndex(i - 2, j + 2) && !IsOutOfIndex(i - 1, j + 2))
+                {
+                    if (puzzles[i - 2, j + 2].color != curPuzzle.color || puzzles[i - 1, j + 2].color != curPuzzle.color) continue;
+
+                    bool isMatch
+
+                    if (!IsOutOfIndex(i + 1, j + 2))
+                    {
+                        if (puzzles[i + 1, j + 2].color == curPuzzle.color)
+                        {
+                            findPuzzle.Add(curPuzzle);
+                            findPuzzle.Add(puzzles[i, j + 1]);
+                            findPuzzle.Add(puzzles[i - 2, j + 2]);
+                            findPuzzle.Add(puzzles[i - 1, j + 2]);
+                            findPuzzle.Add(puzzles[i + 1, j + 2]);
+                            foreach (Puzzle p in findPuzzle)
+                            {
+                                Debug.Log(p.x + "," + p.y);
+                            }
+
+                            return true;
+                        }
+                    }
+                    else if (!IsOutOfIndex(i, j + 3))
+                    {
+                        if (puzzles[i, j + 3].color == curPuzzle.color)
+                        {
+                            findPuzzle.Add(curPuzzle);
+                            findPuzzle.Add(puzzles[i, j + 1]);
+                            findPuzzle.Add(puzzles[i - 2, j + 2]);
+                            findPuzzle.Add(puzzles[i - 1, j + 2]);
+                            findPuzzle.Add(puzzles[i, j + 3]);
+                            foreach (Puzzle p in findPuzzle)
+                            {
+                                Debug.Log(p.x + "," + p.y);
+                            }
+                            return true;
+                        }
+                    }
+
+
+                }
+
+                //오른쪽검사
+                if (!IsOutOfIndex(i + 2, j + 2) && !IsOutOfIndex(i + 1, j + 2))
+                {
+                    if (puzzles[i + 2, j + 2].color != curPuzzle.color || puzzles[i + 1, j + 2].color != curPuzzle.color) continue;
+
+                    if (!IsOutOfIndex(i - 1, j + 2))
+                    {
+                        if (puzzles[i - 1, j + 2].color == curPuzzle.color)
+                        {
+                            findPuzzle.Add(curPuzzle);
+                            findPuzzle.Add(puzzles[i, j + 1]);
+                            findPuzzle.Add(puzzles[i + 2, j + 2]);
+                            findPuzzle.Add(puzzles[i + 1, j + 2]);
+                            findPuzzle.Add(puzzles[i - 1, j + 2]);
+                            foreach (Puzzle p in findPuzzle)
+                            {
+                                Debug.Log(p.x + "," + p.y);
+                            }
+                            return true;
+                        }
+                    }
+                    else if (!IsOutOfIndex(i, j + 3))
+                    {
+                        if (puzzles[i, j + 3].color == curPuzzle.color)
+                        {
+                            findPuzzle.Add(curPuzzle);
+                            findPuzzle.Add(puzzles[i, j + 1]);
+                            findPuzzle.Add(puzzles[i + 2, j + 2]);
+                            findPuzzle.Add(puzzles[i + 1, j + 2]);
+                            findPuzzle.Add(puzzles[i, j + 3]);
+                            foreach (Puzzle p in findPuzzle)
+                            {
+                                Debug.Log(p.x + "," + p.y);
+                            }
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        */
+        return false;
+    }
+
+    public bool FindMatch4()
+    {
+
+
+        for (int j = 0; j < Y; j++)
+        {
+            for (int i = 0; i < X; i++)
+            {
+                List<Puzzle> findPuzzle = new List<Puzzle>();
+                Puzzle curPuzzle = puzzles[i, j];
+
+                if (curPuzzle == null || !curPuzzle.IsMoveable() || curPuzzle.color == PuzzleColor.None) continue;
+
+                for (int k = 0; k < 4; k++)
+                {
+                    int newX = curPuzzle.x + dx[k];
+                    int newY = curPuzzle.y + dy[k];
+
+                    //동서남북으로 해야함;
+                    //if (curPuzzle.x + 4 >= X || curPuzzle.y + 4 >= Y) continue;
+
+
+                    for (int l = 0; l < 3; l++)
+                    {
+                        if (newX < 0 || newY < 0 || newX >= X || newY >= Y)
+                        {
+           
+                            break;
+                        }
+
+                        
+                        //if (puzzles[newX, newY] == null || puzzles[newX, newY].color == PuzzleColor.None) continue;
+
+                        findPuzzle.Add(puzzles[newX, newY]);
+
+                        newX += dx[k];
+                        newY += dy[k];
+
+
+                    }
+
+                    if (findPuzzle.Count == 3)
+                    {
+                        Debug.Log("현 컬퍼즐" + i + "," + j);
+                        foreach (Puzzle p in findPuzzle)
+                        {
+
+                            Debug.Log(k + "4개로 통과했을때" + p.x + "," + p.y);
+
+                        }
+
+                        if (findPuzzle.FindAll(x => x.color == curPuzzle.color).Count == 2)
+                        {
+
+                            Puzzle anotherPuzzle = findPuzzle.Find(x => x.color != curPuzzle.color);
+                            findPuzzle.Remove(anotherPuzzle);
+
+                            for (int h = -1; h <= 1; h += 2)
+                            {
+                                //위아래 검사니까 가로를 체크해봐야함
+                                if (k == 0 || k == 2)
+                                {
+                                    if (anotherPuzzle.x + h < 0 || anotherPuzzle.x + h >= X) continue;
+
+                                    if (puzzles[anotherPuzzle.x + h, anotherPuzzle.y].color == curPuzzle.color)
+                                    {
+                                        findPuzzle.Add(puzzles[anotherPuzzle.x + h, anotherPuzzle.y]);
+                                        findPuzzle.Add(curPuzzle);
+
+                                        Debug.Log(k + "어나더:" + anotherPuzzle.x + "," + anotherPuzzle.y);
+                                        foreach (Puzzle p in findPuzzle)
+                                        {
+                                            Debug.Log(p.x + "," + p.y);
+                                        }
+                                        hintPuzzles.AddRange(findPuzzle);
+                                        return true;
+                                    }
+                                }
+                                else //왼오검사니까 세로를 체크해봐야함
+                                {
+                                    if (anotherPuzzle.y + h < 0 || anotherPuzzle.y + h >= Y) continue;
+
+                                    if (puzzles[anotherPuzzle.x, anotherPuzzle.y + h].color == curPuzzle.color)
+                                    {
+                                        Debug.Log(k + "어나더:" + anotherPuzzle.x + "," + anotherPuzzle.y);
+                                        findPuzzle.Add(puzzles[anotherPuzzle.x, anotherPuzzle.y + h]);
+                                        findPuzzle.Add(curPuzzle);
+                                        foreach (Puzzle p in findPuzzle)
+                                        {
+                                            Debug.Log(p.x + "," + p.y);
+                                        }
+                                        hintPuzzles.AddRange(findPuzzle);
+                                        return true;
+                                    }
+                                }
+
+                               
+
+                            }
+
+                            findPuzzle.Clear();
+                            continue;
+                        }
+                        else
+                        {
+                            findPuzzle.Clear();
+                            continue;
+                        }
+
+                    }
+                    else
+                    {
+                        findPuzzle.Clear();
+                        continue;
+                    }
+                }
+
+            }
+        }
+
+
+        return false;
+    }
+
+    public bool FindMatch3()
+    {
+        //Puzzle movePuzzle = null;
+        
+
+        for (int j = 0; j < Y; j++)
+        {
+            for (int i = 0; i < X; i++)
+            {
+                List<Puzzle> findPuzzle = new List<Puzzle>();
+                Puzzle curPuzzle = puzzles[i, j];
+                
+                if (curPuzzle == null || !curPuzzle.IsMoveable() || curPuzzle.color == PuzzleColor.None) continue;
+
+                for (int k = 0; k < 4; k++)
+                {
+                    int newX = curPuzzle.x + dx[k];
+                    int newY = curPuzzle.y + dy[k];
+
+                    //동서남북으로 해야함;
+                    //if (curPuzzle.x + 4 >= X || curPuzzle.y + 4 >= Y) continue;
+                    
+
+                    for (int l = 0; l < 2; l++)
+                    {
+                        if (newX < 0 || newY < 0 || newX >= X || newY >= Y) break;
+                        //if (puzzles[newX, newY] == null || puzzles[newX, newY].color == PuzzleColor.None) break;
+
+                        findPuzzle.Add(puzzles[newX, newY]);
+
+                        newX += dx[k];
+                        newY += dy[k];
+
+
+                    }
+
+                    if (findPuzzle.Count == 2)
+                    {
+                        Debug.Log("현 컬퍼즐" + i + "," + j);
+                        foreach (Puzzle p in findPuzzle)
+                        {
+                            
+                            Debug.Log(k+"2개로 통과했을때" + p.x + "," + p.y);
+                            
+                        }
+
+                        if (findPuzzle.FindAll(x => x.color == curPuzzle.color).Count == 1)
+                        {
+
+                            Puzzle anotherPuzzle = findPuzzle.Find(x => x.color != curPuzzle.color);
+                            findPuzzle.Remove(anotherPuzzle);
+
+                            for (int h = -1; h <= 1; h += 2)
+                            {
+                                //위아래 검사니까 가로를 체크해봐야함
+                                if (k == 0 || k == 2)
+                                {
+                                    if (anotherPuzzle.x + h < 0 || anotherPuzzle.x + h >= X) continue;
+
+                                    if (puzzles[anotherPuzzle.x + h, anotherPuzzle.y].color == curPuzzle.color)
+                                    {
+                                        findPuzzle.Add(puzzles[anotherPuzzle.x + h, anotherPuzzle.y]);
+                                        findPuzzle.Add(curPuzzle);
+                                        Debug.Log(k + "어나더: " + anotherPuzzle.x + "," + anotherPuzzle.y);
+
+                                        foreach (Puzzle p in findPuzzle)
+                                        {
+                                            Debug.Log(p.x + "," + p.y);
+                                        }
+                                        hintPuzzles.AddRange(findPuzzle);
+                                        return true;
+                                    }
+                                }
+                                else //왼오검사니까 세로를 체크해봐야함
+                                {
+                                    if (anotherPuzzle.y + h < 0 || anotherPuzzle.y + h >= Y) continue;
+
+                                    if (puzzles[anotherPuzzle.x, anotherPuzzle.y + h].color == curPuzzle.color)
+                                    {
+                                        Debug.Log(k + "어나더: " + anotherPuzzle.x + "," + anotherPuzzle.y);
+
+                                        findPuzzle.Add(puzzles[anotherPuzzle.x, anotherPuzzle.y + h]);
+                                        findPuzzle.Add(curPuzzle);
+                                        foreach (Puzzle p in findPuzzle)
+                                        {
+                                            Debug.Log(p.x + "," + p.y);
+                                        }
+                                        hintPuzzles.AddRange(findPuzzle);
+                                        return true;
+                                    }
+                                }
+                            }
+                            findPuzzle.Clear();
+                            continue;
+
+                        }
+                        else
+                        {
+                            findPuzzle.Clear();
+                            continue;
+                        }
+
+                    }
+                    else
+                    {
+                        findPuzzle.Clear();
+                        continue;
+                    }
+                }
+
+            }
+        }
+
+
+        return false;
+    }
+
+
 
 }
