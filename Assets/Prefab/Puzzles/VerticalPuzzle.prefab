@@ -123,11 +123,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd96ec58a17b4504eac7bb7945413ffa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  x: 0
-  y: 0
-  type: 4
+  type: 3
   color: 2
   myRect: {fileID: 5882344040426820183}
   animator: {fileID: 8933417496327689312}
-  destroyAnimation: []
   effect: {fileID: 8223133632075617415, guid: 8a3e9d06cc52e3e41b366edacfd1d9d4, type: 3}

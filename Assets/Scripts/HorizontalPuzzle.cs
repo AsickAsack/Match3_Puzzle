@@ -5,28 +5,35 @@ using UnityEngine.Events;
 
 public class HorizontalPuzzle : Puzzle
 {
-    public GameObject effect;
+    [Header("[ÄÄÆ÷³ÍÆ®]")]
+    [SerializeField]
+    private GameObject effect;
 
-    public override void DestroyRoutine(bool isIgnore = false, UnityAction callBack = null)
+    public override void Pop(bool isIgnore = false, UnityAction callBack = null)
     {
+        if (manager.GetPuzzle(X, Y) == this)
+        {
+            manager.SetPuzzle(X, Y, null);
+        }
 
-        manager.puzzles[this.x, this.y] = null;
-
-        Instantiate(effect,this.transform.position,Quaternion.identity, this.transform.parent).GetComponent<CrossEffect>().SetAndShoot(Vector2.right);
-        Instantiate(effect, this.transform.position, Quaternion.identity, this.transform.parent).GetComponent<CrossEffect>().SetAndShoot(Vector2.left);
+        Instantiate(effect,this.transform.position,Quaternion.identity, this.transform.parent).GetComponent<CrossEffect>().SetAndMove(Vector2.right);
+        Instantiate(effect, this.transform.position, Quaternion.identity, this.transform.parent).GetComponent<CrossEffect>().SetAndMove(Vector2.left);
 
 
         for (int i = 0; i < manager.X; i++)
         {
+            Puzzle curPuzzle = manager.GetPuzzle(i, this.Y);
 
-            if (manager.puzzles[i, this.y] != null)
+            if (curPuzzle != null)
             {
-                manager.puzzles[i, this.y].DestroyRoutine();
+                curPuzzle.Pop();
             }
         }
 
         animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         animator.SetTrigger(color.ToString());
+
+        callBack?.Invoke();
     }
 
 }

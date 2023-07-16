@@ -4,31 +4,34 @@ using UnityEngine;
 using UnityEngine.Events;
 public class BombPuzzle : Puzzle
 {
-    public GameObject explosionEffect;
+    [Header("[ÄÄÆ÷³ÍÆ®]")]
+    [SerializeField]
+    private GameObject effect;
 
-
-
-    public override void DestroyRoutine(bool isIgnore = false, UnityAction callBack = null)
+    public override void Pop(bool isIgnore = false, UnityAction callBack = null)
     {
-        Instantiate(explosionEffect,this.transform.parent).GetComponent<RectTransform>().anchoredPosition = manager.maker.GetPos(this.x-1,this.y-1);
+        Instantiate(effect,this.transform.parent).GetComponent<RectTransform>().anchoredPosition = manager.Maker.GetPos(this.X-1,this.Y-1);
 
-        manager.puzzles[this.x, this.y] = null;
-
-        for (int i = this.x - 1; i <= this.x + 1; i++)
+        if (manager.GetPuzzle(X, Y) == this)
         {
-            for (int j = this.y - 1; j <= this.y + 1; j++)
+            manager.SetPuzzle(X, Y, null);
+        }
+
+        for (int i = this.X - 1; i <= this.X + 1; i++)
+        {
+            for (int j = this.Y - 1; j <= this.Y + 1; j++)
             {
-                if (i < 0 || j < 0 || i >= manager.X || j >= manager.Y) continue;
+                //if (i < 0 || j < 0 || i >= manager.X || j >= manager.Y) continue;
+                Puzzle curPuzzle = manager.GetPuzzle(i, j);
 
-
-                if (manager.puzzles[i,j] != null)
+                if (curPuzzle != null)
                 {
-                    manager.puzzles[i, j].DestroyRoutine();
+                    curPuzzle.Pop();
                 }
-
-
             }
         }
+
+        callBack?.Invoke();
 
         Destroy(gameObject);
     }

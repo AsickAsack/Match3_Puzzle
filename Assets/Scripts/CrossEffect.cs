@@ -4,34 +4,31 @@ using UnityEngine;
 
 public class CrossEffect : MonoBehaviour
 {
+    [SerializeField]
+    private float speed;
 
-    public RectTransform myRect;
-    public float speed;
+    [SerializeField]
+    private RectTransform myRect;
 
-    private Vector2 limitHorizontal;
-    private Vector2 limitVertical;
-
-    public void SetAndShoot(Vector2 dir)
+    //방향 설정 후 움직이기
+    public void SetAndMove(Vector2 dir)
     {
-        
-        StartCoroutine(MoveAndRotate(dir));
+        StartCoroutine(MoveCoroutine(dir));
     }
     
-    IEnumerator MoveAndRotate(Vector2 dir)
+    IEnumerator MoveCoroutine(Vector2 dir)
     {
         float time = 0;
-        while(time < 2.0f)
+        while(time < 1.0f)
         {
             time += Time.deltaTime;
 
             myRect.anchoredPosition += dir * speed * Time.deltaTime;
 
-
              yield return null;
         }
 
-
-
+        Destroy(gameObject);
     }
 
 

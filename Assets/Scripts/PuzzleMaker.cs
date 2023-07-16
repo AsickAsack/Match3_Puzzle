@@ -6,28 +6,50 @@ using UnityEngine.UI;
 public class PuzzleMaker : MonoBehaviour
 {
     //게임 테마(컬러)
-    public PuzzleColor gameTheme;
+    [Header("[게임 테마]")]
+    [SerializeField]
+    private PuzzleColor gameTheme;
+
+    [Header("[퍼즐 매니저]")]
     [SerializeField]
     private PuzzleManager manager;
 
+    [Header("[퍼즐 세팅]")]
+    //퍼즐 가로세로 크기
+    [SerializeField]
+    private int x;
+    [SerializeField]
+    private int y;
 
-    //퍼즐 크기
-    public int x;
-    public int y;
+    public int X => x;
+    public int Y => y;
 
-    public RectTransform frameRect;
-    public int pSpacing;
-    public GameObject puzzleBackPrefab;
-    public GameObject[] puzzlePrefab;
+    [SerializeField]
+    private int puzzleSpacing; //퍼즐 간격
 
+    [SerializeField]
+    private RectTransform puzzleBackFrame;
+    [SerializeField]
+    private RectTransform puzzleFrame;
+
+    [Header("[프리펩]")]
+    [SerializeField]
+    private GameObject puzzleBackPrefab;
+    [SerializeField]
+    private GameObject[] puzzlePrefab;
+
+    [Header("[퍼즐 스프라이트]")]
     public Sprite[] puzzleSprs;
     public Sprite[] verticalSprs;
     public Sprite[] horizontalSprs;
     public Sprite[] puzzleBackSprs;
     public Sprite[] frameSprs;
 
-    public InitPuzzle[] initPuzzles;
-    public Vector2 puzzleSize;
+    [Header("[초기 퍼즐 생성]")]
+    [SerializeField]
+    private InitPuzzle[] initPuzzles;
+
+    private Vector2 puzzleSize;
 
     private void Awake()
     {
@@ -35,58 +57,46 @@ public class PuzzleMaker : MonoBehaviour
 
         puzzleSize = puzzleBackPrefab.GetComponent<RectTransform>().sizeDelta;
 
-        frameRect.sizeDelta = new Vector2(puzzleSize.x * x + pSpacing, puzzleSize.y * y + pSpacing);
-        frameRect.GetComponent<Image>().sprite = frameSprs[(int)gameTheme];
+        //외곽선 세팅
+        puzzleBackFrame.sizeDelta = puzzleFrame.sizeDelta = new Vector2((puzzleSize.x * x) + puzzleSpacing, (puzzleSize.y * y) + puzzleSpacing);
+        puzzleBackFrame.GetComponent<Image>().sprite = frameSprs[(int)gameTheme];
 
-        manager.puzzles = new Puzzle[x, y];
+        manager.InitPuzzles(x, y);
 
-
+        //퍼즐 배경 생성
         for (int i = 0; i < x; i++)
         {
             for (int j = 0; j < y; j++)
             {
-                Instantiate(puzzleBackPrefab, frameRect.transform).GetComponent<PuzzleBackGround>().Init(GetPos(i, j), puzzleBackSprs[(int)gameTheme]);
-                //puzzles[i,j] = MakeNewPuzzle(i, j);
+                Instantiate(puzzleBackPrefab, puzzleBackFrame.transform).GetComponent<PuzzleBackGround>().Init(GetPos(i, j), puzzleBackSprs[(int)gameTheme]);
             }
-
         }
 
-
+        //초기 세팅 퍼즐이 있다면 생성
         for (int i = 0; i < initPuzzles.Length; i++)
         {
-            GameObject temp = puzzlePrefab[(int)initPuzzles[i].type];
+            Puzzle newInitPuzzle = Instantiate(puzzlePrefab[(int)initPuzzles[i].type], puzzleFrame.transform).GetComponent<Puzzle>();
+            newInitPuzzle.Init(initPuzzles[i].coordinate.x, initPuzzles[i].coordinate.y, this.manager);
 
-
-
-            Puzzle newObstacle = Instantiate(temp, frameRect.transform).GetComponent<Puzzle>();
-            newObstacle.Init(initPuzzles[i].coordinate.x, initPuzzles[i].coordinate.y, newObstacle.type, this.manager);
-
-
-            manager.puzzles[initPuzzles[i].coordinate.x, initPuzzles[i].coordinate.y] = newObstacle;
-
+            manager.SetPuzzle(initPuzzles[i].coordinate.x, initPuzzles[i].coordinate.y,newInitPuzzle);
         }
 
         manager.Fill();
-
     }
 
-
-    //퍼즐 생성
-    public Puzzle MakeNewPuzzle(int x, int y,PuzzleType type,PuzzleColor color = PuzzleColor.None)
+    //새로운 퍼즐 생성
+    public Puzzle MakeNewPuzzle(int x, int y, PuzzleType type, PuzzleColor color = PuzzleColor.None)
     {
-
-        Puzzle newPuzzle = Instantiate(puzzlePrefab[(int)type], frameRect.transform).GetComponent<Puzzle>();
-        newPuzzle.Init(x, y, type ,this.manager, color);
+        Puzzle newPuzzle = Instantiate(puzzlePrefab[(int)type], puzzleFrame.transform).GetComponent<Puzzle>();
+        newPuzzle.Init(x, y, this.manager, color);
 
         return newPuzzle;
     }
 
-
     //좌표값에 맞는 퍼즐 위치 리턴
     public Vector2 GetPos(int x, int y)
     {
-        return new Vector2(x * puzzleSize.x + pSpacing / 2, -y * puzzleSize.y - pSpacing / 2);
+        return new Vector2(x * puzzleSize.x + puzzleSpacing / 2, -y * puzzleSize.y - puzzleSpacing / 2);
     }
-
 
 }

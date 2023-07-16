@@ -5,7 +5,9 @@ using UnityEngine.Events;
 
 public class RainbowPuzzle : Puzzle
 {
-    public GameObject exEffect;
+    [Header("[컴포넌트]")]
+    [SerializeField]
+    private GameObject effect;
     private PuzzleColor destroyColor = PuzzleColor.None;
 
     public void SetDestroyColor(PuzzleColor destroyColor)
@@ -13,25 +15,25 @@ public class RainbowPuzzle : Puzzle
         this.destroyColor = destroyColor;
     }
 
-    public override void DestroyRoutine(bool isIgnore = false, UnityAction callBack = null)
+    public override void Pop(bool isIgnore = false, UnityAction callBack = null)
     {
-        //색깔 건너받아야함
-        manager.puzzles[this.x, this.y] = null;
-        
-        for(int i=0;i<manager.X;i++)
+        if (manager.GetPuzzle(X, Y) == this)
+        {
+            manager.SetPuzzle(X, Y, null);
+        }
+
+        for (int i=0;i<manager.X;i++)
         {
             for(int j=0;j<manager.Y;j++)
             {
-                if (manager.puzzles[i,j] != null && manager.puzzles[i, j].color == destroyColor)
+                Puzzle curPuzzle = manager.GetPuzzle(i, j);
+
+                if (curPuzzle != null && curPuzzle.color == destroyColor)
                 {
-                    
-                    Instantiate(exEffect,this.transform.parent).GetComponent<RectTransform>().anchoredPosition = manager.maker.GetPos(i,j);
-                    bool effectIgnore = manager.puzzles[i, j].type == PuzzleType.Normal ? true : false;
-                    manager.puzzles[i, j].DestroyRoutine(effectIgnore);
-
-
+                    Instantiate(effect,this.transform.parent).GetComponent<RectTransform>().anchoredPosition = manager.Maker.GetPos(i,j);
+                    bool effectIgnore = curPuzzle.type == PuzzleType.Normal ? true : false;
+                    curPuzzle.Pop(effectIgnore);
                 }
-
             }
         }
 

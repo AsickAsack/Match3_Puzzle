@@ -3,13 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System;
+using System.Linq;
 
 
-
+public enum Dir
+{
+    Up, Right, Down, Left
+}
 
 
 [System.Serializable]
-public struct InitPuzzle
+public struct InitPuzzle //처음에 만들어둘 퍼즐
 {
     public PuzzleType type;
     public Vector2Int coordinate;
@@ -19,32 +24,96 @@ public struct InitPuzzle
 public class PuzzleManager : MonoBehaviour
 {
 
+    [SerializeField]
+    private PuzzleMaker maker;
+    
+    public PuzzleMaker Maker => maker;
 
     [SerializeField]
-    public PuzzleMaker maker;
+    private PuzzleUIManager uiManager;
 
-    public Puzzle[,] puzzles;
-    private Puzzle curPuzzle;
+    private int point;
+    public int Point
+    {
+        get { return point; }
+        set 
+        { 
+            point = value; 
+            uiManager.SetPointUI(point);
+        }
+    }
 
-    public int X => maker.x;
-    public int Y => maker.y;
+    private Puzzle[,] puzzles;
+
+    private Puzzle selectPuzzle;
+
+    public int X => Maker.X;
+    public int Y => Maker.Y;
+
+    [SerializeField]
+    private float hintTime;
 
     public bool isClick = false;
     public bool isProcess = true;
 
 
-    public Puzzle CurPuzzle
+    public Puzzle SelectPuzzle
     {
         get
         {
-            return curPuzzle;
+            return selectPuzzle;
         }
 
         set
         {
-            curPuzzle = value;
+            selectPuzzle = value;
         }
     }
+
+    //퍼즐 초기화
+    public void InitPuzzles(int x, int y)
+    {
+        if (puzzles != null) return;
+
+        puzzles = new Puzzle[x, y];
+
+    }
+
+    //좌표로 퍼즐 가져오기, OutOfIndex 검사
+    public Puzzle GetPuzzle(int x, int y)
+    {
+        if (IsOutOfIndex(x, y)) return null;
+
+        return puzzles[x, y];
+    }
+
+    //컬러퍼즐인지 검사 후 가져오기
+    public Puzzle GetColorPuzzle(int x, int y)
+    {
+        if (IsOutOfIndex(x, y) || puzzles[x, y].color == PuzzleColor.None) return null;
+
+        return puzzles[x, y];
+    }
+
+    //퍼즐 배열에 참조, OutOfIndex 검사
+    public bool SetPuzzle(int x, int y, Puzzle newPuzzle)
+    {
+        if (IsOutOfIndex(x, y)) return false;
+
+        puzzles[x, y] = newPuzzle;
+        return true;
+    }
+
+    //퍼즐 배열 레인지 밖으로 나가는지 확인
+    public bool IsOutOfIndex(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= X || y >= Y) return true;
+
+        return false;
+    }
+
+
+    #region 퍼즐 채우기, 터트리기 탐색
 
     Coroutine fillco = null;
 
@@ -55,11 +124,11 @@ public class PuzzleManager : MonoBehaviour
         {
             fillco = StartCoroutine(FillCor());
         }
-
     }
 
     IEnumerator FillCor()
     {
+       
         isProcess = true;
         bool needFill = true;
 
@@ -71,14 +140,18 @@ public class PuzzleManager : MonoBehaviour
                 yield return new WaitForSeconds(0.1f);
             }
 
-            needFill = CheckPuzzle();
-            yield return new WaitForSeconds(0.2f);
+            yield return CheckPuzzleCo((isNeedFill) =>
+            {
+                needFill = isNeedFill;
+            });
+
+            // yield return new WaitForSeconds(0.2f); //터지고 내리는 시간 기다려주기
         }
 
         isProcess = false;
         fillco = null;
 
-        FindMatchToUser();
+        CheckHintTime(true);
     }
 
 
@@ -135,7 +208,7 @@ public class PuzzleManager : MonoBehaviour
         {
             if (puzzles[i, 0] == null)
             {
-                Puzzle newPuzzle = maker.MakeNewPuzzle(i, -1, PuzzleType.Normal);
+                Puzzle newPuzzle = Maker.MakeNewPuzzle(i, -1, PuzzleType.Normal);
 
                 newPuzzle.SetCoordinate(i, 0);
                 newPuzzle.Move(0.1f);
@@ -150,7 +223,7 @@ public class PuzzleManager : MonoBehaviour
     //퍼즐 이동 후 배열,x,y값 바꾸기
     void PuzzleChange(Puzzle curPuzzle, int newX, int newY)
     {
-        puzzles[curPuzzle.x, curPuzzle.y] = null;
+        puzzles[curPuzzle.X, curPuzzle.Y] = null;
         curPuzzle.SetCoordinate(newX, newY);
         curPuzzle.Move(0.1f);
     }
@@ -168,18 +241,250 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
-    //시계방향으로 검사
+    //시계방향으로 검사 배열
     private int[] dx = new int[] { 0, 1, 0, -1 };
     private int[] dy = new int[] { -1, 0, 1, 0 };
 
 
+    IEnumerator CheckPuzzleCo(Action<bool> callBack)
+    {
+        bool isDestroyBlock = false;
+
+        List<Puzzle> itemPuzzles = new List<Puzzle>();
+        List<Puzzle> destroyPuzzles = new List<Puzzle>();
+        Queue<Puzzle> searchQueue = new Queue<Puzzle>();
+
+        for (int j = 0; j < Y; j++)
+        {
+            for (int i = 0; i < X; i++)
+            {
+
+                if (puzzles[i, j] == null || puzzles[i, j].color == PuzzleColor.None) continue;
+
+                HashSet<Puzzle> visitPuzzles = new HashSet<Puzzle>();
+                searchQueue.Enqueue(puzzles[i, j]);
+                visitPuzzles.Add(puzzles[i, j]);
+
+                PuzzleType rewardType = PuzzleType.Empty;
+
+                while (searchQueue.Count != 0)
+                {
+                    Puzzle curPuzzle = searchQueue.Dequeue();
+
+                    List<List<Puzzle>> findPuzzles = new List<List<Puzzle>>();
+
+                    List<Puzzle> up = new List<Puzzle>();
+                    List<Puzzle> right = new List<Puzzle>();
+                    List<Puzzle> down = new List<Puzzle>();
+                    List<Puzzle> left = new List<Puzzle>();
+
+                    findPuzzles.Add(up);
+                    findPuzzles.Add(right);
+                    findPuzzles.Add(down);
+                    findPuzzles.Add(left);
+
+                    //현재 퍼즐에서 상하좌우 탐색
+                    for (int k = 0; k < 4; k++)
+                    {
+                        int newX = curPuzzle.X + dx[k];
+                        int newY = curPuzzle.Y + dy[k];
+
+                        do
+                        {
+                            Puzzle newPuzzle = GetPuzzle(newX, newY);
+
+                            if (newPuzzle == null || curPuzzle.color != newPuzzle.color) break;
+
+                            //방문하지 않은 퍼즐이라면 큐에 넣어줌
+                            if (visitPuzzles.Add(newPuzzle))
+                            {
+                                searchQueue.Enqueue(newPuzzle);
+                            }
+
+                            if (!itemPuzzles.Contains(newPuzzle) || !destroyPuzzles.Contains(newPuzzle))
+                                findPuzzles[k].Add(newPuzzle);
+
+
+                            newX += dx[k];
+                            newY += dy[k];
+
+                        } while (true);
+                    }
+
+                    //여기서부터 아이템 생성조건에 부합한지 체크
+
+                    if ((findPuzzles[0].Count + findPuzzles[1].Count + findPuzzles[2].Count + findPuzzles[3].Count) < 2) continue;
+
+                    //레인보우 되는지 체크(5개)
+                    if (rewardType != PuzzleType.Rainbow &&
+                        ((findPuzzles[0].Count + findPuzzles[2].Count >= 4) || (findPuzzles[1].Count + findPuzzles[3].Count >= 4)))
+                    {
+                        itemPuzzles.Clear();
+                        itemPuzzles.Add(curPuzzle);
+                        rewardType = PuzzleType.Rainbow;
+
+                        if (findPuzzles[0].Count + findPuzzles[2].Count >= 4)
+                        {
+                            itemPuzzles.AddRange(findPuzzles[0]);
+                            itemPuzzles.AddRange(findPuzzles[2]);
+                        }
+
+                        if (findPuzzles[1].Count + findPuzzles[3].Count >= 4)
+                        {
+                            itemPuzzles.AddRange(findPuzzles[1]);
+                            itemPuzzles.AddRange(findPuzzles[3]);
+                        }
+                    }
+                    // L자 되는지 체크(폭탄)
+                    else if ((rewardType == PuzzleType.Empty || (int)rewardType < 4)
+                        && ((findPuzzles[0].Count >= 2 || findPuzzles[2].Count >= 2) && (findPuzzles[1].Count >= 2 || findPuzzles[3].Count >= 2))) //L자
+                    {
+
+                        itemPuzzles.Clear();
+                        rewardType = PuzzleType.Bomb;
+                        itemPuzzles.Add(curPuzzle);
+
+                        for (int bombindex = 0; bombindex < 4; bombindex++)
+                        {
+                            if (findPuzzles[bombindex].Count >= 2)
+                            {
+                                itemPuzzles.AddRange(findPuzzles[bombindex]);
+                            }
+                        }
+
+
+                    }
+                    //4개 되는지 체크
+                    else if ((rewardType == PuzzleType.Empty || (int)rewardType < 2)
+                        && ((findPuzzles[0].Count + findPuzzles[2].Count >= 3) || (findPuzzles[1].Count + findPuzzles[3].Count >= 3)))
+                    {
+
+                        itemPuzzles.Clear();
+                        itemPuzzles.Add(curPuzzle);
+
+                        if ((findPuzzles[0].Count + findPuzzles[2].Count >= 3))
+                        {
+                            rewardType = PuzzleType.Vertical;
+                            itemPuzzles.AddRange(findPuzzles[0]);
+                            itemPuzzles.AddRange(findPuzzles[2]);
+                        }
+                        else if (findPuzzles[1].Count + findPuzzles[3].Count >= 3)
+                        {
+                            rewardType = PuzzleType.Horizontal;
+                            itemPuzzles.AddRange(findPuzzles[1]);
+                            itemPuzzles.AddRange(findPuzzles[3]);
+
+                        }
+
+                    }
+                    //다 안되면 터지긴 하는지 체크
+                    else
+                    {
+
+                        if (findPuzzles[0].Count + findPuzzles[2].Count >= 2)
+                        {
+                            if (!destroyPuzzles.Contains(curPuzzle))
+                                destroyPuzzles.Add(curPuzzle);
+                            destroyPuzzles.AddRange(findPuzzles[0]);
+                            destroyPuzzles.AddRange(findPuzzles[2]);
+                        }
+
+                        if (findPuzzles[1].Count + findPuzzles[3].Count >= 2)
+                        {
+                            if (!destroyPuzzles.Contains(curPuzzle))
+                                destroyPuzzles.Add(curPuzzle);
+                            destroyPuzzles.AddRange(findPuzzles[1]);
+                            destroyPuzzles.AddRange(findPuzzles[3]);
+                        }
+                    }
+
+
+                }
+                //bfs끝
+
+
+                if (destroyPuzzles.Count >= 1)
+                {
+                    //itemPuzzles = itemPuzzles.Distinct().ToList();
+                    //destroyPuzzles = itemPuzzles.Distinct().ToList();
+
+                    isDestroyBlock = true;
+
+                    if (rewardType != PuzzleType.Empty)
+                    {
+                        Puzzle itemPuzzle = Maker.MakeNewPuzzle(itemPuzzles[0].X, itemPuzzles[0].Y, rewardType, itemPuzzles[0].color);
+
+                        Action<bool, UnityEngine.Events.UnityAction> action = null;
+
+                        foreach (Puzzle puzzle in itemPuzzles)
+                        {
+                            if (puzzle != null && puzzle != itemPuzzle)
+                            {
+                                if (puzzle.X != itemPuzzle.X || puzzle.Y != itemPuzzle.Y)
+                                {
+                                    SetPuzzle(puzzle.X, puzzle.Y, null);
+                                }
+
+                                if (puzzle.type == PuzzleType.Normal)
+                                    puzzle.Move(itemPuzzle.X, itemPuzzle.Y, 0.1f, () => puzzle.Pop(true));
+                                else
+                                    action += puzzle.Pop;
+                            }
+                        }
+
+                        action?.Invoke(false, null);
+
+                        foreach (Puzzle puzzle in destroyPuzzles)
+                        {
+                            if (puzzle != null)
+                            {
+                                puzzle.Pop();
+                            }
+                        }
+
+                        SetPuzzle(itemPuzzle.X, itemPuzzle.Y, itemPuzzle);
+                        itemPuzzles.Clear();
+                    }
+                    else
+                    {
+                        foreach (Puzzle puzzle in destroyPuzzles)
+                        {
+                            if (puzzle != null)
+                            {
+
+                                puzzle.Pop();
+                            }
+                        }
+                    }
+
+                    destroyPuzzles.Clear();
+
+                }
+
+            }
+
+            yield return null;
+        }
+
+        //터치는 시간만큼 기다려줘야함.
+
+        if (isDestroyBlock)
+            yield return new WaitForSeconds(0.1f);
+
+        callBack?.Invoke(isDestroyBlock);
+
+    }
+
+
+
+    /*
 
     //붙어있는 퍼즐 체크
+    //TODO: 스왑할때 체크는 거기서부터.
     public bool CheckPuzzle(int startX = 0, int startY = 0)
     {
         bool isDestroyBlock = false;
 
-        List<Puzzle> rewardPuzzles = new List<Puzzle>();
         List<Puzzle> destroyPuzzles = new List<Puzzle>();
         Queue<Puzzle> searchQueue = new Queue<Puzzle>();
 
@@ -200,196 +505,153 @@ public class PuzzleManager : MonoBehaviour
                 {
                     Puzzle curPuzzle = searchQueue.Dequeue();
 
-                    List<List<Puzzle>> find = new List<List<Puzzle>>();
+                    List<List<Puzzle>> findPuzzles = new List<List<Puzzle>>();
 
-                    List<Puzzle> left = new List<Puzzle>();
-                    List<Puzzle> right = new List<Puzzle>();
                     List<Puzzle> up = new List<Puzzle>();
+                    List<Puzzle> right = new List<Puzzle>();
                     List<Puzzle> down = new List<Puzzle>();
+                    List<Puzzle> left = new List<Puzzle>();
 
-                    find.Add(up);
-                    find.Add(right);
-                    find.Add(down);
-                    find.Add(left);
+                    findPuzzles.Add(up);
+                    findPuzzles.Add(right);
+                    findPuzzles.Add(down);
+                    findPuzzles.Add(left);
 
-                    //현재 퍼즐에서 동서남북 탐색
+                    //현재 퍼즐에서 상하좌우 탐색
                     for (int k = 0; k < 4; k++)
                     {
-                        int newX = curPuzzle.x + dx[k];
-                        int newY = curPuzzle.y + dy[k];
+                        int newX = curPuzzle.X + dx[k];
+                        int newY = curPuzzle.Y + dy[k];
 
                         do
                         {
-                            if (newX < 0 || newY < 0 || newX >= X || newY >= Y) break;
+                            Puzzle newPuzzle = GetPuzzle(newX, newY);
 
-                            if (puzzles[newX, newY] == null || curPuzzle.color != puzzles[newX, newY].color) break;
+                            if (newPuzzle == null || curPuzzle.color != newPuzzle.color) break;
 
-                            //이미 방문하지 않은 애라면
-                            if (visitPuzzles.Add(puzzles[newX, newY]))
+                            //방문하지 않은 퍼즐이라면 큐에 넣어줌
+                            if (visitPuzzles.Add(newPuzzle))
                             {
-                                searchQueue.Enqueue(puzzles[newX, newY]);
+                                searchQueue.Enqueue(newPuzzle);
                             }
 
-                            if (!find[k].Contains(puzzles[newX, newY]) || destroyPuzzles.Contains(puzzles[newX, newY]))
-                            {
-                                find[k].Add(puzzles[newX, newY]);
-                            }
+                            findPuzzles[k].Add(newPuzzle);
+
 
                             newX += dx[k];
                             newY += dy[k];
 
                         } while (true);
-
-
                     }
 
-                    if ((find[0].Count + find[1].Count + find[2].Count + find[3].Count) < 2) continue;
+                    //여기서부터 아이템 생성조건에 부합한지 체크
 
-                    //레인보우 되는지 체크
-                    if (rewardType != PuzzleType.Rainbow && ((find[0].Count + find[2].Count >= 4) || (find[1].Count + find[3].Count >= 4)))
+                    if ((findPuzzles[0].Count + findPuzzles[1].Count + findPuzzles[2].Count + findPuzzles[3].Count) < 2) continue;
+
+                    //레인보우 되는지 체크(5개)
+                    if (rewardType != PuzzleType.Rainbow && ((findPuzzles[0].Count + findPuzzles[2].Count >= 4) || (findPuzzles[1].Count + findPuzzles[3].Count >= 4)))
                     {
-                        Debug.Log("레입모우?");
-                        rewardPuzzles.Clear();
-                        rewardPuzzles.Add(curPuzzle);
+                        destroyPuzzles.Clear();
+                        destroyPuzzles.Add(curPuzzle);
                         rewardType = PuzzleType.Rainbow;
 
-                        if (find[0].Count + find[2].Count >= 4)
+                        if (findPuzzles[0].Count + findPuzzles[2].Count >= 4)
                         {
-                            rewardPuzzles.AddRange(find[0]);
-                            rewardPuzzles.AddRange(find[2]);
+                            destroyPuzzles.AddRange(findPuzzles[0]);
+                            destroyPuzzles.AddRange(findPuzzles[2]);
                         }
 
-                        if (find[1].Count + find[3].Count >= 4)
+                        if (findPuzzles[1].Count + findPuzzles[3].Count >= 4)
                         {
-                            rewardPuzzles.AddRange(find[1]);
-                            rewardPuzzles.AddRange(find[3]);
+                            destroyPuzzles.AddRange(findPuzzles[1]);
+                            destroyPuzzles.AddRange(findPuzzles[3]);
                         }
                     }
-
-                    if ((rewardType == PuzzleType.Empty || (int)rewardType < 4) && ((find[0].Count >= 2 || find[2].Count >= 2) && (find[1].Count >= 2 || find[3].Count >= 2))) //L자
+                    // L자 되는지 체크(폭탄)
+                    else if ((rewardType == PuzzleType.Empty || (int)rewardType < 4) && ((findPuzzles[0].Count >= 2 || findPuzzles[2].Count >= 2) && (findPuzzles[1].Count >= 2 || findPuzzles[3].Count >= 2))) //L자
                     {
 
-                        Debug.Log("L자");
-                        rewardPuzzles.Clear();
+                        destroyPuzzles.Clear();
                         rewardType = PuzzleType.Bomb;
-                        rewardPuzzles.Add(curPuzzle);
+                        destroyPuzzles.Add(curPuzzle);
 
                         for (int bombindex = 0; bombindex < 4; bombindex++)
                         {
-                            if (find[bombindex].Count >= 2)
+                            if (findPuzzles[bombindex].Count >= 2)
                             {
-                                rewardPuzzles.AddRange(find[bombindex]);
+                                destroyPuzzles.AddRange(findPuzzles[bombindex]);
                             }
                         }
 
 
                     }
-
-                    if ((rewardType == PuzzleType.Empty || (int)rewardType < 2) && ((find[0].Count + find[2].Count >= 3) || (find[1].Count + find[3].Count >= 3)))
+                    //4개 되는지 체크
+                    else if ((rewardType == PuzzleType.Empty || (int)rewardType < 2) && ((findPuzzles[0].Count + findPuzzles[2].Count >= 3) || (findPuzzles[1].Count + findPuzzles[3].Count >= 3)))
                     {
 
-                        rewardPuzzles.Clear();
-                        rewardPuzzles.Add(curPuzzle);
+                        destroyPuzzles.Clear();
+                        destroyPuzzles.Add(curPuzzle);
 
-                        if ((find[0].Count + find[2].Count >= 3))
+                        if ((findPuzzles[0].Count + findPuzzles[2].Count >= 3))
                         {
                             rewardType = PuzzleType.Vertical;
-                            rewardPuzzles.AddRange(find[0]);
-                            rewardPuzzles.AddRange(find[2]);
+                            destroyPuzzles.AddRange(findPuzzles[0]);
+                            destroyPuzzles.AddRange(findPuzzles[2]);
                         }
-                        else if (find[1].Count + find[3].Count >= 3)
+                        else if (findPuzzles[1].Count + findPuzzles[3].Count >= 3)
                         {
                             rewardType = PuzzleType.Horizontal;
-                            rewardPuzzles.AddRange(find[1]);
-                            rewardPuzzles.AddRange(find[3]);
+                            destroyPuzzles.AddRange(findPuzzles[1]);
+                            destroyPuzzles.AddRange(findPuzzles[3]);
 
                         }
 
                     }
-
-                    //세로가 터질 요건이 충족되는지
-                    if (find[0].Count + find[2].Count >= 2)
-                    {
-                        destroyPuzzles.Add(curPuzzle);
-                        destroyPuzzles.AddRange(find[0]);
-                        destroyPuzzles.AddRange(find[2]);
-                    }
-
-                    if (find[1].Count + find[3].Count >= 2)
+                    //다 안되면 터지긴 하는지 체크
+                    else
                     {
 
-                        destroyPuzzles.Add(curPuzzle);
-                        destroyPuzzles.AddRange(find[1]);
-                        destroyPuzzles.AddRange(find[3]);
+                        if (findPuzzles[0].Count + findPuzzles[2].Count >= 2)
+                        {
+                            destroyPuzzles.Add(curPuzzle);
+                            destroyPuzzles.AddRange(findPuzzles[0]);
+                            destroyPuzzles.AddRange(findPuzzles[2]);
+                        }
+
+                        if (findPuzzles[1].Count + findPuzzles[3].Count >= 2)
+                        {
+                            destroyPuzzles.Add(curPuzzle);
+                            destroyPuzzles.AddRange(findPuzzles[1]);
+                            destroyPuzzles.AddRange(findPuzzles[3]);
+                        }
                     }
 
-
-
-                    //여기서는 동서남북 확인해서 아이템 지급할건지만 확인하고 , 반복문 긑나면 아이템 지급 검사 하셈
                 }
                 //bfs끝
 
                 // TODO: 검사를 안에서 해도 될거같음. 스페셜이 있으면 굳이 검사 안해도 되니까.
-                List<Puzzle> specialList = new List<Puzzle>();
-
-                specialList.AddRange(destroyPuzzles.FindAll(x => x.type == PuzzleType.Vertical));
-                specialList.AddRange(destroyPuzzles.FindAll(x => x.type == PuzzleType.Horizontal));
-
-                if (specialList.Count >= 1)
-                {
-                    isDestroyBlock = true;
-                    foreach (Puzzle p in specialList)
-                    {
-                        p.DestroyRoutine();
-                    }
-
-                    rewardPuzzles.Clear();
-                    /*
-                    destroyPuzzles.Clear();
-                    
-                    continue;
-                    */
-
-                }
-
-                if (rewardPuzzles.Count >= 1)
-                {
-                    isDestroyBlock = true;
-
-                    (int, int) temp = (rewardPuzzles[0].x, rewardPuzzles[0].y);
-                    PuzzleColor tempColor = rewardPuzzles[0].color;
-
-                    foreach (Puzzle puzzle in rewardPuzzles)
-                    {
-                        if (puzzle != null)
-                        {
-                            isDestroyBlock = true;
-                            puzzle.DestroyRoutine();
-                        }
-                    }
-
-                    puzzles[temp.Item1, temp.Item2] = maker.MakeNewPuzzle(temp.Item1, temp.Item2, rewardType, tempColor);
-
-
-                }
-
+   
 
                 if (destroyPuzzles.Count >= 1)
                 {
                     isDestroyBlock = true;
+
+                    if (rewardType != PuzzleType.Empty)
+                    {
+                        Puzzle itemPuzzle = Maker.MakeNewPuzzle(destroyPuzzles[0].X, destroyPuzzles[0].Y, rewardType, destroyPuzzles[0].color);
+                        SetPuzzle(itemPuzzle.X, itemPuzzle.Y, itemPuzzle);
+                    }
+
                     foreach (Puzzle puzzle in destroyPuzzles)
                     {
-                        if (puzzle != null && !rewardPuzzles.Contains(puzzle))
+                        if (puzzle != null)
                         {
-                            isDestroyBlock = true;
-                            puzzle.DestroyRoutine();
+                            puzzle.Pop();
                         }
                     }
 
-
+                    destroyPuzzles.Clear();
                 }
-                destroyPuzzles.Clear();
-                rewardPuzzles.Clear();
 
             }
         }
@@ -398,23 +660,25 @@ public class PuzzleManager : MonoBehaviour
 
         return isDestroyBlock;
     }
+    */
+    #endregion
 
 
+    #region 퍼즐 스왑
 
+    //퍼즐 스왑 
     public void SwapPuzzle(Puzzle swapPuzzle)
     {
+        //당한쪽에서 호출하는거임. 즉 swapPuzzle이 눌럿던 퍼즐임
         isClick = false;
 
-        TwinklePuzzles(false);
+        int newX = selectPuzzle.X;
+        int newY = selectPuzzle.Y;
 
-        int newX = curPuzzle.x;
-        int newY = curPuzzle.y;
-
-
-        if ((newX == swapPuzzle.x && (newY == swapPuzzle.y - 1 || newY == swapPuzzle.y + 1))
-            || (newY == swapPuzzle.y && (newX == swapPuzzle.x - 1 || newX == swapPuzzle.x + 1)))
+        if ((newX == swapPuzzle.X && (newY == swapPuzzle.Y - 1 || newY == swapPuzzle.Y + 1))
+            || (newY == swapPuzzle.Y && (newX == swapPuzzle.X - 1 || newX == swapPuzzle.X + 1)))
         {
-
+            CheckHintTime(false);
             StartCoroutine(SwapPuzzleCor(newX, newY, swapPuzzle));
         }
     }
@@ -422,24 +686,24 @@ public class PuzzleManager : MonoBehaviour
 
     IEnumerator SwapPuzzleCor(int newX, int newY, Puzzle swapPuzzle)
     {
+        //당한쪽에서 호출하는거임. 즉 swapPuzzle이 눌럿던 퍼즐임
         isProcess = true;
-        curPuzzle.SetAndMove(swapPuzzle.x, swapPuzzle.y);
+        selectPuzzle.SetAndMove(swapPuzzle.X, swapPuzzle.Y);
         swapPuzzle.SetAndMove(newX, newY);
 
-        yield return new WaitForSeconds(0.1f);
-
-        if (swapPuzzle.type == PuzzleType.Rainbow || curPuzzle.type == PuzzleType.Rainbow)
+        
+        if (swapPuzzle.type == PuzzleType.Rainbow || selectPuzzle.type == PuzzleType.Rainbow)
         {
             if (swapPuzzle.type == PuzzleType.Rainbow || swapPuzzle.type == PuzzleType.Rainbow)
             {
-                swapPuzzle.GetComponent<RainbowPuzzle>().SetDestroyColor(curPuzzle.color);
-                swapPuzzle.DestroyRoutine();
+                swapPuzzle.GetComponent<RainbowPuzzle>().SetDestroyColor(selectPuzzle.color);
+                swapPuzzle.Pop();
 
             }
             else
             {
-                curPuzzle.GetComponent<RainbowPuzzle>().SetDestroyColor(swapPuzzle.color);
-                curPuzzle.DestroyRoutine();
+                selectPuzzle.GetComponent<RainbowPuzzle>().SetDestroyColor(swapPuzzle.color);
+                selectPuzzle.Pop();
             }
 
             yield return new WaitForSeconds(0.1f);
@@ -450,39 +714,16 @@ public class PuzzleManager : MonoBehaviour
         }
 
 
-        /*
-        if (swapPuzzle.type == PuzzleType.Horizontal || curPuzzle.type == PuzzleType.Horizontal || swapPuzzle.type == PuzzleType.Vertical || curPuzzle.type == PuzzleType.Vertical)
-        {
-            if (swapPuzzle.type == PuzzleType.Horizontal || swapPuzzle.type == PuzzleType.Vertical)
-            {
-                swapPuzzle.DestroyRoutine();
-
-            }
-            else 
-            {
-                curPuzzle.DestroyRoutine();
-            }
-
-
-            yield return new WaitForSeconds(0.2f);
-            Fill();
-            isProcess = false;
-            yield break;
-        }
-        */
-
-        if (swapPuzzle.type == PuzzleType.Bomb || curPuzzle.type == PuzzleType.Bomb)
+        if (swapPuzzle.type == PuzzleType.Bomb || selectPuzzle.type == PuzzleType.Bomb)
         {
             if (swapPuzzle.type == PuzzleType.Bomb)
             {
-                swapPuzzle.DestroyRoutine();
-
-
+                swapPuzzle.Pop();
 
             }
             else
             {
-                curPuzzle.DestroyRoutine();
+                selectPuzzle.Pop();
             }
 
 
@@ -491,101 +732,196 @@ public class PuzzleManager : MonoBehaviour
 
             yield break;
         }
-
-
-        if (CheckPuzzle())
+        
+        /*
+        if (isSpecialMatch(swapPuzzle, selectPuzzle))
         {
-            yield return new WaitForSeconds(0.2f);
-            Fill();
+
+
+
+            yield return new WaitForSeconds(0.1f);
         }
-        else
+        */
+        StartCoroutine(CheckPuzzleCo((isNeedFill) =>
         {
-            swapPuzzle.SetAndMove(curPuzzle.x, curPuzzle.y);
-            curPuzzle.SetAndMove(newX, newY);
-            isProcess = false;
-        }
+            //콜백
+            if (isNeedFill)
+            {
+                Fill();
+            }
+            else
+            {
+                CheckHintTime(true);
+                swapPuzzle.SetAndMove(selectPuzzle.X, selectPuzzle.Y);
+                selectPuzzle.SetAndMove(newX, newY);
+                isProcess = false;
+                selectPuzzle = null;
+            }
+
+        }));
 
 
 
-        curPuzzle = null;
+        yield return null;
 
     }
 
-
-    public void ReStart()
+    public bool isSpecialMatch(Puzzle p, Puzzle p2)
     {
-        SceneManager.LoadSceneAsync(0);
+        if (p.type == PuzzleType.Normal || p.type == PuzzleType.Horizontal || p.type == PuzzleType.Vertical) return false;
+        if (p2.type == PuzzleType.Normal || p2.type == PuzzleType.Horizontal || p2.type == PuzzleType.Vertical) return false;
+
+        if (p.type == PuzzleType.Rainbow)
+        {
+            switch (p2.type)
+            {
+                case PuzzleType.Bomb:
+                    break;
+                case PuzzleType.Rainbow:
+                    break;
+            }
+        }
+        else if (p.type == PuzzleType.Bomb)
+        {
+            switch (p2.type)
+            {
+                case PuzzleType.Bomb:
+                    break;
+                case PuzzleType.Rainbow:
+                    break;
+            }
+        }
+
+        return true;
     }
 
 
-    public void TwinklePuzzles(bool isStart)
+    #endregion
+
+
+    #region 매치가능한 퍼즐 탐색 기능들
+
+    private Coroutine coHintTimeCheck;
+    private List<Puzzle> hintPuzzles = new List<Puzzle>();
+
+    //일정시간동안 입력없을시 힌트주는 시간 체크
+    public void CheckHintTime(bool isCheck)
     {
-        foreach(Puzzle p in hintPuzzles)
+        if (coHintTimeCheck != null)
         {
-            p.Twinkle(isStart);
+            StopCoroutine(coHintTimeCheck);
         }
 
-        if(isStart == false)
+        FlickerPuzzles(false);
+
+        if (isCheck)
+        {
+            StartCoroutine(CheckHintTimeCoroutine());
+        }
+    }
+
+    IEnumerator CheckHintTimeCoroutine()
+    {
+        float time = 0.0f;
+
+        while (time < hintTime)
+        {
+            time += Time.deltaTime;
+
+            yield return null;
+        }
+
+        FindMatchablePuzzle();
+    }
+
+    //찾은 힌트 퍼즐들 깜빡/해제
+    public void FlickerPuzzles(bool isFlicker)
+    {
+        foreach (Puzzle p in hintPuzzles)
+        {
+            if (p != null)
+            {
+                p.Flicker(isFlicker);
+            }
+
+        }
+
+        if (isFlicker == false)
         {
             hintPuzzles.Clear();
         }
     }
 
+    //같은 컬러 퍼즐 찾기
+    public Puzzle FindSameColor(Puzzle puzzle, int index, PuzzleColor color, Dir dir)
+    {
+        Puzzle findPuzzle = null;
 
-    //맞는거 찾기
-    public void FindMatchToUser()
+        switch (dir)
+        {
+            case Dir.Up:
+                findPuzzle = GetPuzzle(puzzle.X, puzzle.Y - index);
+                break;
+
+            case Dir.Right:
+                findPuzzle = GetPuzzle(puzzle.X + index, puzzle.Y);
+                break;
+
+            case Dir.Down:
+                findPuzzle = GetPuzzle(puzzle.X, puzzle.Y + index);
+                break;
+
+            case Dir.Left:
+                findPuzzle = GetPuzzle(puzzle.X - index, puzzle.Y);
+                break;
+        }
+
+        if (findPuzzle == null || findPuzzle.type == PuzzleType.Obstacle || findPuzzle.color != color) return null;
+
+        return findPuzzle;
+
+    }
+
+
+
+
+    //매치할수있는 퍼즐 찾기
+    public void FindMatchablePuzzle()
     {
         // 5개 -> L자 -> 4개 -> 3개 순. 없으면 다 뿌수고 리필.
 
-        if (FindMatch5())
+        try
         {
-            TwinklePuzzles(true);
-            Debug.Log("5개찾음");
-            return;
-        }
-
-        if (FindMatchL())
-        {
-            TwinklePuzzles(true);
-            Debug.Log("L자 찾음");
-            return;
-        }
-        if (FindMatch4())
-        {
-            TwinklePuzzles(true);
-            Debug.Log("4개찾음");
-            return;
-
-        }
-        if (FindMatch3())
-        {
-            TwinklePuzzles(true);
-            Debug.Log("3개찾음");
-            return;
-        }
-
-        Debug.Log("암거도없음;");
-        /*
-        //없으면 다 부수고 리필
-
-        for (int j = 0; j < Y; j++)
-        {
-            for (int i = 0; i < X; i++)
+            if (FindMatch(5) || FindMatchL() || FindMatch(4) || FindMatch(3))
             {
-                Destroy(puzzles[i, j].gameObject);
-                puzzles[i, j] = null;
+                FlickerPuzzles(true);
+                return;
             }
-        }
 
-        Fill();
-        */
+            for (int j = 0; j < Y; j++)
+            {
+                for (int i = 0; i < X; i++)
+                {
+                    if (puzzles[i, j] != null)
+                    {
+                        puzzles[i, j].Pop();
+                    }
+                }
+            }
+
+            Fill();
+        }
+        catch
+        {
+            return;
+        }
+        
     }
 
-    List<Puzzle> hintPuzzles = new List<Puzzle>();
 
-    public bool FindMatch5()
+    //5,4,3 모양 탐색
+    public bool FindMatch(int MatchCount)
     {
-
 
         for (int j = 0; j < Y; j++)
         {
@@ -594,93 +930,84 @@ public class PuzzleManager : MonoBehaviour
                 List<Puzzle> findPuzzle = new List<Puzzle>();
                 Puzzle curPuzzle = puzzles[i, j];
 
-                if (curPuzzle == null || !curPuzzle.IsMoveable() || curPuzzle.color == PuzzleColor.None) continue;
+                if (curPuzzle == null || curPuzzle.color == PuzzleColor.None) continue;
 
-                for (int k = 0; k < 4; k++)
+                if (!IsOutOfIndex(i + MatchCount - 1, j))
                 {
-                    int newX = curPuzzle.x + dx[k];
-                    int newY = curPuzzle.y + dy[k];
-
-                    //동서남북으로 해야함;
-                    //if (curPuzzle.x + 4 >= X || curPuzzle.y + 4 >= Y) continue;
-
-
-                    for (int l = 0; l < 4; l++)
+                    for (int k = 1; k < MatchCount; k++)
                     {
-                        if (newX < 0 || newY < 0 || newX >= X || newY >= Y) break;
-                        //if (puzzles[newX, newY] == null || puzzles[newX, newY].color == PuzzleColor.None) continue;
-
-                        findPuzzle.Add(puzzles[newX, newY]);
-
-                        newX += dx[k];
-                        newY += dy[k];
-
-
+                        findPuzzle.Add(GetPuzzle(i + k, j));
                     }
 
-                    if (findPuzzle.Count == 4)
+                    if (findPuzzle.FindAll(x => x.color == curPuzzle.color).Count == MatchCount - 2)
                     {
+                        Puzzle anotherPuzzle = findPuzzle.Find(x => x.color != curPuzzle.color);
+                        findPuzzle.Remove(anotherPuzzle);
 
-                        if (findPuzzle.FindAll(x => x.color == curPuzzle.color).Count == 3)
+                        for (int h = 0; h < 2; h++)
                         {
-                            Debug.Log("찾았다 같은거 3개");
-                            Puzzle anotherPuzzle = findPuzzle.Find(x => x.color != curPuzzle.color);
-                            findPuzzle.Remove(anotherPuzzle);
-
-                            for (int h = -1; h <= 1; h += 2)
+                            if (FindSameColor(anotherPuzzle, 1, curPuzzle.color, h == 0 ? Dir.Up : Dir.Down) != null)
                             {
-                                //위아래 검사니까 가로를 체크해봐야함
-                                if (k == 0 || k == 2)
-                                {
-                                    if (anotherPuzzle.x + h < 0 || anotherPuzzle.x + h >= X) continue;
+                                hintPuzzles.Add(curPuzzle);
+                                hintPuzzles.Add(FindSameColor(anotherPuzzle, 1, curPuzzle.color, h == 0 ? Dir.Up : Dir.Down));
+                                hintPuzzles.AddRange(findPuzzle);
+                                return true;
+                            }
+                        }
 
-                                    if (puzzles[anotherPuzzle.x + h, anotherPuzzle.y].color == curPuzzle.color)
-                                    {
-                                        findPuzzle.Add(puzzles[anotherPuzzle.x + h, anotherPuzzle.y]);
-                                        findPuzzle.Add(curPuzzle);
-
-                                        hintPuzzles.AddRange(findPuzzle);
-                                        
-
-
-                                        return true;
-                                    }
-                                }
-                                else //왼오검사니까 세로를 체크해봐야함
-                                {
-                                    if (anotherPuzzle.y + h < 0 || anotherPuzzle.y + h >= Y) continue;
-
-                                    if (puzzles[anotherPuzzle.x, anotherPuzzle.y + h].color == curPuzzle.color)
-                                    {
-                                        findPuzzle.Add(puzzles[anotherPuzzle.x, anotherPuzzle.y + h]);
-                                        findPuzzle.Add(curPuzzle);
-                                        foreach (Puzzle p in findPuzzle)
-                                        {
-                                            Debug.Log(p.x + "," + p.y);
-                                        }
-                                        hintPuzzles.AddRange(findPuzzle);
-                                        return true;
-                                    }
-                                }
+                        if (MatchCount == 3 && anotherPuzzle.X == curPuzzle.X + 2)
+                        {
+                            if (FindSameColor(anotherPuzzle, 1, curPuzzle.color, Dir.Right) != null)
+                            {
+                                hintPuzzles.Add(curPuzzle);
+                                hintPuzzles.Add(FindSameColor(anotherPuzzle, 1, curPuzzle.color, Dir.Right));
+                                hintPuzzles.AddRange(findPuzzle);
+                                return true;
                             }
 
-                            findPuzzle.Clear();
-                            continue;
                         }
-                        else
-                        {
-                            findPuzzle.Clear();
-                            continue;
-                        }
-
-                    }
-                    else
-                    {
-                        findPuzzle.Clear();
-                        continue;
                     }
                 }
 
+                findPuzzle.Clear();
+
+                if (!IsOutOfIndex(i, j + MatchCount - 1))
+                {
+                    for (int k = 1; k < MatchCount; k++)
+                    {
+                        findPuzzle.Add(GetPuzzle(i, j + k));
+                    }
+
+                    if (findPuzzle.FindAll(x => x.color == curPuzzle.color).Count == MatchCount - 2)
+                    {
+                        Puzzle anotherPuzzle = findPuzzle.Find(x => x.color != curPuzzle.color);
+                        findPuzzle.Remove(anotherPuzzle);
+
+
+                        for (int h = 0; h < 2; h++)
+                        {
+                            if (FindSameColor(anotherPuzzle, 1, curPuzzle.color, h == 0 ? Dir.Right : Dir.Left) != null)
+                            {
+                                hintPuzzles.Add(curPuzzle);
+                                hintPuzzles.Add(FindSameColor(anotherPuzzle, 1, curPuzzle.color, h == 0 ? Dir.Right : Dir.Left));
+                                hintPuzzles.AddRange(findPuzzle);
+                                return true;
+                            }
+                        }
+
+                        if (MatchCount == 3 && anotherPuzzle.Y == curPuzzle.Y + 2)
+                        {
+                            if (FindSameColor(anotherPuzzle, 1, curPuzzle.color, Dir.Down) != null)
+                            {
+                                hintPuzzles.Add(curPuzzle);
+                                hintPuzzles.Add(FindSameColor(anotherPuzzle, 1, curPuzzle.color, Dir.Down));
+                                hintPuzzles.AddRange(findPuzzle);
+                                return true;
+                            }
+
+                        }
+                    }
+                }
             }
         }
 
@@ -688,13 +1015,8 @@ public class PuzzleManager : MonoBehaviour
         return false;
     }
 
-    public bool IsOutOfIndex(int x, int y)
-    {
-        if (x < 0 || y < 0 || x >= X || y >= Y) return true;
 
-        return false;
-    }
-
+    //L모양 탐색
     public bool FindMatchL()
     {
         List<Puzzle> findPuzzle = new List<Puzzle>();
@@ -733,13 +1055,7 @@ public class PuzzleManager : MonoBehaviour
             }
         }
 
-
-
-
-
-
-
-
+        //Lshape탐색
 
         (bool, Puzzle[]) isLShape(int x, int y)
         {
@@ -766,13 +1082,14 @@ public class PuzzleManager : MonoBehaviour
 
         }
 
+        //L뒤집은 모양 탐색
         (bool, Puzzle[]) isReverseLShape(int x, int y)
         {
-            if (IsOutOfIndex(x - 2, y) || IsOutOfIndex(x, y + 2)) return (false,null);
+            if (IsOutOfIndex(x - 2, y) || IsOutOfIndex(x, y + 2)) return (false, null);
 
             Puzzle curpuzzle = puzzles[x, y];
 
-            if(puzzles[x, y + 1].color == curpuzzle.color && puzzles[x, y + 2].color != curpuzzle.color
+            if (puzzles[x, y + 1].color == curpuzzle.color && puzzles[x, y + 2].color != curpuzzle.color
                 && puzzles[x - 1, y + 2].color == curpuzzle.color && puzzles[x - 2, y + 2].color == curpuzzle.color)
             {
                 if (!IsOutOfIndex(x + 1, y + 2) && puzzles[x + 1, y + 2].color == curpuzzle.color)
@@ -785,330 +1102,17 @@ public class PuzzleManager : MonoBehaviour
                 }
             }
 
-
             return (false, null);
         }
 
-        /*
-        for (int j = 0; j < Y; j++)
-        {
-            for (int i = 0; i < X; i++)
-            {
-                Puzzle curPuzzle = puzzles[i, j];
-
-                if (curPuzzle == null || curPuzzle.color == PuzzleColor.None) continue;
-                if (IsOutOfIndex(i, j + 2)) continue;
-                if (puzzles[i, j + 1].color != puzzles[i, j + 2].color) continue;
-
-                List<Puzzle> downPuzzles = new List<Puzzle>();
-
-                downPuzzles.Add(puzzles[i, j + 1]);
-                downPuzzles.Add(puzzles[i, j + 2]);
-
-                if (IsOutOfIndex(i-2, j) || puzzles[i-1, j].color != puzzles[i-2, j].color) continue;
-
-                List<Puzzle> leftPuzzles = new List<Puzzle>();
-
-                leftPuzzles.Add(puzzles[i-1, j]);
-                leftPuzzles.Add(puzzles[i-2, j]);
-
-                if (downPuzzles[0].color == leftPuzzles[0].color)
-                {
-                    //왼쪽이니까  오른쪽이랑 위 검사해야함.
-
-                    bool isMatch = false;
-
-                    if(!IsOutOfIndex(i, j-1) && downPuzzles[0].color == puzzles[i, j - 1].color)
-                    {
-                        isMatch = true;
-                        findPuzzle.Add(puzzles[i, j - 1]);
-
-                    }
-                    else if(!IsOutOfIndex(i+1, j) && downPuzzles[0].color == puzzles[i+1,j].color)
-                    {
-                        isMatch = true;
-                        findPuzzle.Add(puzzles[i+1, j]);
-                    }
-
-                    if(isMatch)
-                    {
-                        findPuzzle.AddRange(downPuzzles);
-                        findPuzzle.AddRange(leftPuzzles);
-
-                        return true;
-                    }
-
-
-                }
-
-
-                if (!IsOutOfIndex(i + 2, j) || puzzles[i + 1, j].color != puzzles[i + 2, j].color) continue;
-
-                List<Puzzle> rightPuzzles = new List<Puzzle>();
-
-                rightPuzzles.Add(puzzles[i + 1, j]);
-                rightPuzzles.Add(puzzles[i + 2, j]);
-
-
-                if (downPuzzles[0].color == rightPuzzles[0].color)
-                {
-                    //오른쪽이니까 왼쪽이랑 위 검사해야함.
-
-                    bool isMatch = false;
-
-                    if (!IsOutOfIndex(i, j - 1) && downPuzzles[0].color == puzzles[i, j - 1].color)
-                    {
-                        isMatch = true;
-                        findPuzzle.Add(puzzles[i, j - 1]);
-
-                    }
-                    else if (downPuzzles[0].color == puzzles[i - 1, j].color)
-                    {
-                        isMatch = true;
-                        findPuzzle.Add(puzzles[i - 1, j]);
-                    }
-
-                    if (isMatch)
-                    {
-                        findPuzzle.AddRange(downPuzzles);
-                        findPuzzle.AddRange(leftPuzzles);
-
-                        return true;
-                    }
-
-                }
-            }
-        }
-        */
-
-        /*
-        for (int j = 0; j < Y; j++)
-        {
-            for (int i = 0; i < X; i++)
-            {
-                Puzzle curPuzzle = puzzles[i, j];
-
-                if (curPuzzle == null || curPuzzle.color == PuzzleColor.None) continue;
-                if (IsOutOfIndex(i, j + 2)) continue;
-                if (puzzles[i, j + 1].color != curPuzzle.color || puzzles[i, j + 2].color == curPuzzle.color) continue;
-
-                //왼쪽 검사
-                if (!IsOutOfIndex(i - 2, j + 2) && !IsOutOfIndex(i - 1, j + 2))
-                {
-                    if (puzzles[i - 2, j + 2].color != curPuzzle.color || puzzles[i - 1, j + 2].color != curPuzzle.color) continue;
-
-                    bool isMatch
-
-                    if (!IsOutOfIndex(i + 1, j + 2))
-                    {
-                        if (puzzles[i + 1, j + 2].color == curPuzzle.color)
-                        {
-                            findPuzzle.Add(curPuzzle);
-                            findPuzzle.Add(puzzles[i, j + 1]);
-                            findPuzzle.Add(puzzles[i - 2, j + 2]);
-                            findPuzzle.Add(puzzles[i - 1, j + 2]);
-                            findPuzzle.Add(puzzles[i + 1, j + 2]);
-                            foreach (Puzzle p in findPuzzle)
-                            {
-                                Debug.Log(p.x + "," + p.y);
-                            }
-
-                            return true;
-                        }
-                    }
-                    else if (!IsOutOfIndex(i, j + 3))
-                    {
-                        if (puzzles[i, j + 3].color == curPuzzle.color)
-                        {
-                            findPuzzle.Add(curPuzzle);
-                            findPuzzle.Add(puzzles[i, j + 1]);
-                            findPuzzle.Add(puzzles[i - 2, j + 2]);
-                            findPuzzle.Add(puzzles[i - 1, j + 2]);
-                            findPuzzle.Add(puzzles[i, j + 3]);
-                            foreach (Puzzle p in findPuzzle)
-                            {
-                                Debug.Log(p.x + "," + p.y);
-                            }
-                            return true;
-                        }
-                    }
-
-
-                }
-
-                //오른쪽검사
-                if (!IsOutOfIndex(i + 2, j + 2) && !IsOutOfIndex(i + 1, j + 2))
-                {
-                    if (puzzles[i + 2, j + 2].color != curPuzzle.color || puzzles[i + 1, j + 2].color != curPuzzle.color) continue;
-
-                    if (!IsOutOfIndex(i - 1, j + 2))
-                    {
-                        if (puzzles[i - 1, j + 2].color == curPuzzle.color)
-                        {
-                            findPuzzle.Add(curPuzzle);
-                            findPuzzle.Add(puzzles[i, j + 1]);
-                            findPuzzle.Add(puzzles[i + 2, j + 2]);
-                            findPuzzle.Add(puzzles[i + 1, j + 2]);
-                            findPuzzle.Add(puzzles[i - 1, j + 2]);
-                            foreach (Puzzle p in findPuzzle)
-                            {
-                                Debug.Log(p.x + "," + p.y);
-                            }
-                            return true;
-                        }
-                    }
-                    else if (!IsOutOfIndex(i, j + 3))
-                    {
-                        if (puzzles[i, j + 3].color == curPuzzle.color)
-                        {
-                            findPuzzle.Add(curPuzzle);
-                            findPuzzle.Add(puzzles[i, j + 1]);
-                            findPuzzle.Add(puzzles[i + 2, j + 2]);
-                            findPuzzle.Add(puzzles[i + 1, j + 2]);
-                            findPuzzle.Add(puzzles[i, j + 3]);
-                            foreach (Puzzle p in findPuzzle)
-                            {
-                                Debug.Log(p.x + "," + p.y);
-                            }
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        
-        */
         return false;
     }
 
-    public bool FindMatch4()
-    {
-
-
-        for (int j = 0; j < Y; j++)
-        {
-            for (int i = 0; i < X; i++)
-            {
-                List<Puzzle> findPuzzle = new List<Puzzle>();
-                Puzzle curPuzzle = puzzles[i, j];
-
-                if (curPuzzle == null || !curPuzzle.IsMoveable() || curPuzzle.color == PuzzleColor.None) continue;
-
-                for (int k = 0; k < 4; k++)
-                {
-                    int newX = curPuzzle.x + dx[k];
-                    int newY = curPuzzle.y + dy[k];
-
-                    //동서남북으로 해야함;
-                    //if (curPuzzle.x + 4 >= X || curPuzzle.y + 4 >= Y) continue;
-
-
-                    for (int l = 0; l < 3; l++)
-                    {
-                        if (newX < 0 || newY < 0 || newX >= X || newY >= Y)
-                        {
-           
-                            break;
-                        }
-
-                        
-                        //if (puzzles[newX, newY] == null || puzzles[newX, newY].color == PuzzleColor.None) continue;
-
-                        findPuzzle.Add(puzzles[newX, newY]);
-
-                        newX += dx[k];
-                        newY += dy[k];
-
-
-                    }
-
-                    if (findPuzzle.Count == 3)
-                    {
-                        Debug.Log("현 컬퍼즐" + i + "," + j);
-                        foreach (Puzzle p in findPuzzle)
-                        {
-
-                            Debug.Log(k + "4개로 통과했을때" + p.x + "," + p.y);
-
-                        }
-
-                        if (findPuzzle.FindAll(x => x.color == curPuzzle.color).Count == 2)
-                        {
-
-                            Puzzle anotherPuzzle = findPuzzle.Find(x => x.color != curPuzzle.color);
-                            findPuzzle.Remove(anotherPuzzle);
-
-                            for (int h = -1; h <= 1; h += 2)
-                            {
-                                //위아래 검사니까 가로를 체크해봐야함
-                                if (k == 0 || k == 2)
-                                {
-                                    if (anotherPuzzle.x + h < 0 || anotherPuzzle.x + h >= X) continue;
-
-                                    if (puzzles[anotherPuzzle.x + h, anotherPuzzle.y].color == curPuzzle.color)
-                                    {
-                                        findPuzzle.Add(puzzles[anotherPuzzle.x + h, anotherPuzzle.y]);
-                                        findPuzzle.Add(curPuzzle);
-
-                                        Debug.Log(k + "어나더:" + anotherPuzzle.x + "," + anotherPuzzle.y);
-                                        foreach (Puzzle p in findPuzzle)
-                                        {
-                                            Debug.Log(p.x + "," + p.y);
-                                        }
-                                        hintPuzzles.AddRange(findPuzzle);
-                                        return true;
-                                    }
-                                }
-                                else //왼오검사니까 세로를 체크해봐야함
-                                {
-                                    if (anotherPuzzle.y + h < 0 || anotherPuzzle.y + h >= Y) continue;
-
-                                    if (puzzles[anotherPuzzle.x, anotherPuzzle.y + h].color == curPuzzle.color)
-                                    {
-                                        Debug.Log(k + "어나더:" + anotherPuzzle.x + "," + anotherPuzzle.y);
-                                        findPuzzle.Add(puzzles[anotherPuzzle.x, anotherPuzzle.y + h]);
-                                        findPuzzle.Add(curPuzzle);
-                                        foreach (Puzzle p in findPuzzle)
-                                        {
-                                            Debug.Log(p.x + "," + p.y);
-                                        }
-                                        hintPuzzles.AddRange(findPuzzle);
-                                        return true;
-                                    }
-                                }
-
-                               
-
-                            }
-
-                            findPuzzle.Clear();
-                            continue;
-                        }
-                        else
-                        {
-                            findPuzzle.Clear();
-                            continue;
-                        }
-
-                    }
-                    else
-                    {
-                        findPuzzle.Clear();
-                        continue;
-                    }
-                }
-
-            }
-        }
-
-
-        return false;
-    }
-
+    /*
     public bool FindMatch3()
     {
         //Puzzle movePuzzle = null;
-        
+
 
         for (int j = 0; j < Y; j++)
         {
@@ -1116,17 +1120,17 @@ public class PuzzleManager : MonoBehaviour
             {
                 List<Puzzle> findPuzzle = new List<Puzzle>();
                 Puzzle curPuzzle = puzzles[i, j];
-                
+
                 if (curPuzzle == null || !curPuzzle.IsMoveable() || curPuzzle.color == PuzzleColor.None) continue;
 
                 for (int k = 0; k < 4; k++)
                 {
-                    int newX = curPuzzle.x + dx[k];
-                    int newY = curPuzzle.y + dy[k];
+                    int newX = curPuzzle.X + dx[k];
+                    int newY = curPuzzle.Y + dy[k];
 
                     //동서남북으로 해야함;
                     //if (curPuzzle.x + 4 >= X || curPuzzle.y + 4 >= Y) continue;
-                    
+
 
                     for (int l = 0; l < 2; l++)
                     {
@@ -1143,13 +1147,7 @@ public class PuzzleManager : MonoBehaviour
 
                     if (findPuzzle.Count == 2)
                     {
-                        Debug.Log("현 컬퍼즐" + i + "," + j);
-                        foreach (Puzzle p in findPuzzle)
-                        {
-                            
-                            Debug.Log(k+"2개로 통과했을때" + p.x + "," + p.y);
-                            
-                        }
+
 
                         if (findPuzzle.FindAll(x => x.color == curPuzzle.color).Count == 1)
                         {
@@ -1162,17 +1160,17 @@ public class PuzzleManager : MonoBehaviour
                                 //위아래 검사니까 가로를 체크해봐야함
                                 if (k == 0 || k == 2)
                                 {
-                                    if (anotherPuzzle.x + h < 0 || anotherPuzzle.x + h >= X) continue;
+                                    if (anotherPuzzle.X + h < 0 || anotherPuzzle.X + h >= X) continue;
 
-                                    if (puzzles[anotherPuzzle.x + h, anotherPuzzle.y].color == curPuzzle.color)
+                                    if (puzzles[anotherPuzzle.X + h, anotherPuzzle.Y].color == curPuzzle.color)
                                     {
-                                        findPuzzle.Add(puzzles[anotherPuzzle.x + h, anotherPuzzle.y]);
+                                        findPuzzle.Add(puzzles[anotherPuzzle.X + h, anotherPuzzle.Y]);
                                         findPuzzle.Add(curPuzzle);
-                                        Debug.Log(k + "어나더: " + anotherPuzzle.x + "," + anotherPuzzle.y);
+                                        Debug.Log(k + "어나더: " + anotherPuzzle.X + "," + anotherPuzzle.Y);
 
                                         foreach (Puzzle p in findPuzzle)
                                         {
-                                            Debug.Log(p.x + "," + p.y);
+                                            Debug.Log(p.X + "," + p.Y);
                                         }
                                         hintPuzzles.AddRange(findPuzzle);
                                         return true;
@@ -1180,17 +1178,17 @@ public class PuzzleManager : MonoBehaviour
                                 }
                                 else //왼오검사니까 세로를 체크해봐야함
                                 {
-                                    if (anotherPuzzle.y + h < 0 || anotherPuzzle.y + h >= Y) continue;
+                                    if (anotherPuzzle.Y + h < 0 || anotherPuzzle.Y + h >= Y) continue;
 
-                                    if (puzzles[anotherPuzzle.x, anotherPuzzle.y + h].color == curPuzzle.color)
+                                    if (puzzles[anotherPuzzle.X, anotherPuzzle.Y + h].color == curPuzzle.color)
                                     {
-                                        Debug.Log(k + "어나더: " + anotherPuzzle.x + "," + anotherPuzzle.y);
+                                        Debug.Log(k + "어나더: " + anotherPuzzle.X + "," + anotherPuzzle.Y);
 
-                                        findPuzzle.Add(puzzles[anotherPuzzle.x, anotherPuzzle.y + h]);
+                                        findPuzzle.Add(puzzles[anotherPuzzle.X, anotherPuzzle.Y + h]);
                                         findPuzzle.Add(curPuzzle);
                                         foreach (Puzzle p in findPuzzle)
                                         {
-                                            Debug.Log(p.x + "," + p.y);
+                                            Debug.Log(p.X + "," + p.Y);
                                         }
                                         hintPuzzles.AddRange(findPuzzle);
                                         return true;
@@ -1218,10 +1216,21 @@ public class PuzzleManager : MonoBehaviour
             }
         }
 
-
         return false;
+    }
+    */
+
+    #endregion
+
+    #region 체크, 효과 함수
+
+    public void ReStart()
+    {
+        SceneManager.LoadSceneAsync(0);
     }
 
 
+    #endregion
 
 }
+
