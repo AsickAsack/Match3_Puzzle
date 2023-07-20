@@ -1134,7 +1134,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameTheme: 1
   manager: {fileID: 98948995}
-  puzzleData: {fileID: 0}
+  puzzleData: {fileID: 4900000, guid: f363dec1fab07ed419a3471d0c38881e, type: 3}
   x: 5
   y: 8
   puzzleSpacing: 10
@@ -1173,17 +1173,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 590ecaf11dc23b24e8b07bd0a825cc5e, type: 3}
   - {fileID: 21300000, guid: c5ca60aac3f7e734c927152becacb940, type: 3}
   - {fileID: 21300000, guid: eb2eb427da5e4c347a2b7e48af072064, type: 3}
-  initPuzzles:
-  - type: 1
-    coordinate: {x: 0, y: 0}
-  - type: 1
-    coordinate: {x: 2, y: 1}
-  - type: 1
-    coordinate: {x: 4, y: 3}
-  - type: 5
-    coordinate: {x: 2, y: 7}
-  - type: 5
-    coordinate: {x: 3, y: 7}
+  initPuzzles: []
 --- !u!1 &1554223404
 GameObject:
   m_ObjectHideFlags: 0

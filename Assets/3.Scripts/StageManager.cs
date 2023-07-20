@@ -22,6 +22,7 @@ public class StageManager : MonoBehaviour
 
     private List<GameObject> backList = new List<GameObject>();
 
+    //퍼즐 생성
     public Puzzle MakeNewPuzzleInGame(int x,int y,PuzzleType type,PuzzleColor color)
     {
         Transform frame = GameObject.Find("Frame").transform;
@@ -47,12 +48,12 @@ public class StageManager : MonoBehaviour
         return newPuzzle;
     }
 
+
+    //프레임 생성
     public void MakeFrames()
     {
-
         Transform frame = GameObject.Find("Frame").transform;
         frame.GetComponent<RectTransform>().sizeDelta = new Vector2((puzzleSize.x * x) + puzzleSpacing, (puzzleSize.y * y) + puzzleSpacing);
-
 
         foreach (GameObject g in backList)
         {
@@ -72,20 +73,10 @@ public class StageManager : MonoBehaviour
         }
     }
 
+    //좌표 위치 리턴
     public Vector2 GetPos(int x, int y)
     {
         return new Vector2(x * puzzleSize.x + puzzleSpacing / 2, -y * puzzleSize.y - puzzleSpacing / 2);
-    }
-
-
-    public void Init()
-    {
-        GameObject[] child = GameObject.Find("Frame").transform.GetComponentsInChildren<GameObject>();
-
-        foreach(GameObject g in child)
-        {
-            DestroyImmediate(g);
-        }
     }
 
 }

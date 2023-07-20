@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
-using Unity.VisualScripting;
-using System.Data.SqlTypes;
 using System.IO;
 using System;
 using System.Text;
@@ -22,8 +20,7 @@ public class StageManagerEditor : Editor
     public SerializedProperty verticalPuzzleSprites;
     public SerializedProperty gameTheme;
 
-    private bool[] togglesFlag = new bool[7];
-    private int curtogleIndex;
+    private int curGridIndex;
     private Puzzle[,] puzzles;
     private PuzzleType curPuzzleType;
 
@@ -39,6 +36,7 @@ public class StageManagerEditor : Editor
         horizontalPuzzleSprites = serializedObject.FindProperty("horizontalPuzzleSprites");
         verticalPuzzleSprites = serializedObject.FindProperty("verticalPuzzleSprites");
         gameTheme = serializedObject.FindProperty("gameTheme");
+
         puzzles = new Puzzle[x_property.intValue, y_property.intValue];
     }
 
@@ -48,8 +46,6 @@ public class StageManagerEditor : Editor
         StageManager myScript = (StageManager)target;
 
         EditorGUI.BeginChangeCheck();
-
-
 
         //DrawDefaultInspector();
         // 각 프로퍼티들에 대한 기본 ui 필드들을 생성한다.
@@ -81,10 +77,6 @@ public class StageManagerEditor : Editor
         EditorGUILayout.Space(50);
         GUILayout.Label(new GUIContent("퍼즐 종류"), labeStyle);
 
-        List<Texture> textures = new List<Texture>();
-
-
-
         if (EditorGUI.EndChangeCheck())
         {
 
@@ -96,8 +88,9 @@ public class StageManagerEditor : Editor
                 myScript.MakeFrames();
                 DestoryAllPuzzles();
             }
-           
         }
+
+        List<Texture> textures = new List<Texture>();
 
         for (int i = 0; i < myScript.prefabs.Length; i++)
         {
@@ -105,8 +98,9 @@ public class StageManagerEditor : Editor
         }
         textures.Add(null);
 
-        curtogleIndex = GUILayout.SelectionGrid(curtogleIndex, textures.ToArray(), 7);
+        curGridIndex = GUILayout.SelectionGrid(curGridIndex, textures.ToArray(), 7);
         SetCurPuzzleType();
+
         EditorGUILayout.Space(50);
 
         if (GUILayout.Button("리셋", style: btnStyle))
@@ -131,6 +125,7 @@ public class StageManagerEditor : Editor
         for (int y = 0; y < y_property.intValue; y++)
         {
             EditorGUILayout.BeginHorizontal();
+
             for (int x = 0; x < x_property.intValue; x++)
             {
                 Texture tempTexture = null;
@@ -139,7 +134,6 @@ public class StageManagerEditor : Editor
                 {
                     tempTexture = puzzles[x, y].GetComponent<Image>().sprite.texture;
                 }
-                    
 
                 if (GUILayout.Button(image: tempTexture, style: btnStyle))
                 {
@@ -161,12 +155,10 @@ public class StageManagerEditor : Editor
             Save();
         }
 
-
         serializedObject.ApplyModifiedProperties();
-
-
     }
 
+    //저장 함수
     public void Save()
     {
         StringBuilder saveString = new StringBuilder();
@@ -195,11 +187,12 @@ public class StageManagerEditor : Editor
             }  
         }
 
-        File.WriteAllText(Application.persistentDataPath+"이연서.txt", saveString.ToString());
+        File.WriteAllText(Application.dataPath+"puzzleData.txt", saveString.ToString());
 
         Debug.Log("저장이 완료됐습니다!");
     }
 
+    //아이템 텍스쳐 Get함수
     public Texture GetTexture(int index,int color,StageManager manager)
     {
         try
@@ -218,11 +211,10 @@ public class StageManagerEditor : Editor
                 //세로
                 case 3:
                     return manager.verticalPuzzleSprites[color].texture;
-
                 //폭탄
                 case 4:
-                case 5://다이아
-
+                //다이아
+                case 5:
                     return manager.prefabs[index].GetComponent<Image>().sprite.texture;
                 case 6:
                     return null;
@@ -232,11 +224,11 @@ public class StageManagerEditor : Editor
         {
             return null;
         }
-     
-
+    
         return null;
     }
 
+    //모든 퍼즐 제거
     public void DestoryAllPuzzles()
     {
         for(int i=0; i < x_property.intValue;i++)
@@ -247,17 +239,15 @@ public class StageManagerEditor : Editor
                 {
                     DestroyImmediate(puzzles[i, j].gameObject);
                 }
-
             }
         }
     }
 
 
+    //현재 눌린 타입 세팅
     public void SetCurPuzzleType()
     {
-
-        curPuzzleType = (PuzzleType)curtogleIndex;
-
+        curPuzzleType = (PuzzleType)curGridIndex;
     }
 
 
