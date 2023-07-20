@@ -1134,7 +1134,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameTheme: 1
   manager: {fileID: 98948995}
-  puzzleData: {fileID: 4900000, guid: f363dec1fab07ed419a3471d0c38881e, type: 3}
+  puzzleData: {fileID: 4900000, guid: dd3719ff3581fb9409ab771d0a570e48, type: 3}
   x: 5
   y: 8
   puzzleSpacing: 10

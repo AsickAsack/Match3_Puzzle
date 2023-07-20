@@ -187,7 +187,7 @@ public class StageManagerEditor : Editor
             }  
         }
 
-        File.WriteAllText(Application.dataPath+"puzzleData.txt", saveString.ToString());
+        File.WriteAllText(Application.dataPath+"/puzzleData.txt", saveString.ToString());
 
         Debug.Log("저장이 완료됐습니다!");
     }
