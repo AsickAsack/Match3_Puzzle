@@ -39,6 +39,16 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
 
         coMove = StartCoroutine(MoveCoroutine(X, Y, fillTime));
     }
+    public void Move(int x, int y, float fillTime, UnityAction callback)
+    {
+        if (coMove != null)
+        {
+            StopCoroutine(coMove);
+        }
+
+        coMove = StartCoroutine(MoveCoroutine(x, y, fillTime, callback));
+    }
+
 
     IEnumerator MoveCoroutine(int x, int y, float fillTime,UnityAction callback = null)
     {
@@ -59,15 +69,6 @@ public class MoveablePuzzle : MonoBehaviour, IPointerDownHandler, IPointerUpHand
         callback?.Invoke();
     }
 
-    public void Move(int x, int y, float fillTime, UnityAction callback)
-    {
-        if (coMove != null)
-        {
-            StopCoroutine(coMove);
-        }
-
-        coMove = StartCoroutine(MoveCoroutine(x,y,fillTime,callback));
-    }
 
 
     //∆€¡Ò ¥≠∑∂¿ª∂ß

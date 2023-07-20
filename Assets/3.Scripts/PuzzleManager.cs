@@ -226,6 +226,7 @@ public class PuzzleManager : MonoBehaviour
         return isBlockMove;
     }
 
+ 
     //퍼즐 이동 후 배열,x,y값 바꾸기
     void PuzzleChange(Puzzle curPuzzle, int newX, int newY)
     {
@@ -391,6 +392,7 @@ public class PuzzleManager : MonoBehaviour
                         {
                             if (!destroyPuzzles.Contains(curPuzzle))
                                 destroyPuzzles.Add(curPuzzle);
+
                             destroyPuzzles.AddRange(findPuzzles[0]);
                             destroyPuzzles.AddRange(findPuzzles[2]);
                         }
@@ -399,6 +401,7 @@ public class PuzzleManager : MonoBehaviour
                         {
                             if (!destroyPuzzles.Contains(curPuzzle))
                                 destroyPuzzles.Add(curPuzzle);
+
                             destroyPuzzles.AddRange(findPuzzles[1]);
                             destroyPuzzles.AddRange(findPuzzles[3]);
                         }
@@ -530,47 +533,6 @@ public class PuzzleManager : MonoBehaviour
         selectPuzzle.SetAndMove(swapPuzzle.X, swapPuzzle.Y);
         swapPuzzle.SetAndMove(newX, newY);
 
-
-        //if (swapPuzzle.type == PuzzleType.Rainbow || selectPuzzle.type == PuzzleType.Rainbow)
-        //{
-        //    if (swapPuzzle.type == PuzzleType.Rainbow || swapPuzzle.type == PuzzleType.Rainbow)
-        //    {
-        //        swapPuzzle.GetComponent<RainbowPuzzle>().SetDestroyColor(selectPuzzle.color);
-        //        swapPuzzle.Pop();
-
-        //    }
-        //    else
-        //    {
-        //        selectPuzzle.GetComponent<RainbowPuzzle>().SetDestroyColor(swapPuzzle.color);
-        //        selectPuzzle.Pop();
-        //    }
-
-        //    yield return new WaitForSeconds(0.1f);
-        //    Fill();
-
-        //    yield break;
-
-        //}
-
-
-        //if (swapPuzzle.type == PuzzleType.Bomb || selectPuzzle.type == PuzzleType.Bomb)
-        //{
-        //    if (swapPuzzle.type == PuzzleType.Bomb)
-        //    {
-        //        swapPuzzle.Pop();
-
-        //    }
-        //    else
-        //    {
-        //        selectPuzzle.Pop();
-        //    }
-
-
-        //    yield return new WaitForSeconds(0.2f);
-        //    Fill();
-
-        //    yield break;
-        //}
 
         if (selectPuzzle.CheckItemCombination(swapPuzzle))
         {

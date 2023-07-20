@@ -16,6 +16,9 @@ public class PuzzleMaker : MonoBehaviour
     private PuzzleManager manager;
 
     [Header("[퍼즐 세팅]")]
+    [SerializeField]
+    private TextAsset puzzleData;
+
     //퍼즐 가로세로 크기
     [SerializeField]
     private int x;
@@ -61,13 +64,41 @@ public class PuzzleMaker : MonoBehaviour
 
         puzzleSize = puzzleBackPrefab.GetComponent<RectTransform>().sizeDelta;
 
+        //데이터 세팅
+        if(puzzleData != null )
+        {
+            string[] data = puzzleData.text.Split("\n");
+
+            gameTheme = (PuzzleColor)int.Parse(data[0]);
+            this.x = int.Parse(data[1].Split("/")[0]);
+            this.y = int.Parse(data[1].Split("/")[1]);
+
+            manager.InitPuzzles(x, y);
+            puzzlePool = new ObjectPool<Puzzle>(x * y, MakePoolPuzzle, PoolInitAction, PoolReturnAction);
+
+            for (int j = 0; j < y; j++)
+            {
+                string[] puzzleData = data[j+2].Split("/");
+
+                for (int i = 0; i < x; i++)
+                {
+                    manager.SetPuzzle(i, j, MakeNewPuzzle(i, j, (PuzzleType)int.Parse(puzzleData[i][0].ToString()), (PuzzleColor)int.Parse(puzzleData[i][1].ToString())));
+                    
+                }
+            }
+        }
+        else
+        {
+            manager.InitPuzzles(x, y);
+            puzzlePool = new ObjectPool<Puzzle>(x * y, MakePoolPuzzle, PoolInitAction, PoolReturnAction);
+        }
+
+
         //외곽선 세팅
         puzzleBackFrame.sizeDelta = puzzleFrame.sizeDelta = new Vector2((puzzleSize.x * x) + puzzleSpacing, (puzzleSize.y * y) + puzzleSpacing);
         puzzleBackFrame.GetComponent<Image>().sprite = frameSprs[(int)gameTheme];
 
-        manager.InitPuzzles(x, y);
-
-        puzzlePool = new ObjectPool<Puzzle>(x * y, MakePoolPuzzle, PoolInitAction, PoolReturnAction);
+     
 
 
         //퍼즐 배경 생성
@@ -79,13 +110,15 @@ public class PuzzleMaker : MonoBehaviour
             }
         }
 
+
+        
         //초기 세팅 퍼즐이 있다면 생성
         for (int i = 0; i < initPuzzles.Length; i++)
         {
             Puzzle newInitPuzzle = MakeNewPuzzle(initPuzzles[i].coordinate.x, initPuzzles[i].coordinate.y,initPuzzles[i].type);
             manager.SetPuzzle(initPuzzles[i].coordinate.x, initPuzzles[i].coordinate.y,newInitPuzzle);
         }
-
+        
         manager.Fill();
     }
 

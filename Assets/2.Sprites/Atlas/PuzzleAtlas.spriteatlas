@@ -179,7 +179,7 @@ SpriteAtlas:
   - egg_exploding_4_egg_exp_green
   - flower
   - egg_exploding_2_egg_mid_blue
-  - egg_blue_horizenal
+  - egg_blue_vertical
   - egg_exploding_2_egg_mid_pink_horizontal
   - egg_exploding_4_egg_exp_purple_vertical
   - egg_exploding_1_egg_purple_horizontal
@@ -205,7 +205,7 @@ SpriteAtlas:
   - hits-2-5
   - egg_exploding_3_egg_mini_pink_horizontal
   - plate_emerald_unit
-  - egg_purple_horizenal
+  - egg_purple_horizontal
   - egg_exploding_6_egg_edge_purple_vertical
   - raibowegg_damaged_3
   - egg_exploding_4_egg_exp_blue
@@ -213,7 +213,7 @@ SpriteAtlas:
   - raibowegg_damaged_4
   - plate_palegreen_unit
   - egg_exploding_2_egg_mid_blue_vertical
-  - egg_pink_horizenal
+  - egg_pink_horizontal
   - egg_exploding_3_egg_mini_greenhorizontal
   - hits-2-2
   - egg_exploding_3_egg_mini_purple_vertical
@@ -292,7 +292,7 @@ SpriteAtlas:
   - explode_bomb_3
   - egg_exploding_7_empty_green
   - egg_exploding_5_egg_exp2_green_vertical
-  - egg_blue_vertical
+  - egg_blue_horizontal
   - egg_exploding_1_egg_blue_horizontal
   - raibowegg_damaged_2
   - egg_exploding_1_egg_purple

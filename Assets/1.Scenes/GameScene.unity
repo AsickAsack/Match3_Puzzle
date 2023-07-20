@@ -595,7 +595,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &927603304
 RectTransform:
   m_ObjectHideFlags: 0
@@ -869,7 +869,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1408215525
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1134,6 +1134,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameTheme: 1
   manager: {fileID: 98948995}
+  puzzleData: {fileID: 0}
   x: 5
   y: 8
   puzzleSpacing: 10
@@ -1179,9 +1180,9 @@ MonoBehaviour:
     coordinate: {x: 2, y: 1}
   - type: 1
     coordinate: {x: 4, y: 3}
-  - type: 4
+  - type: 5
     coordinate: {x: 2, y: 7}
-  - type: 4
+  - type: 5
     coordinate: {x: 3, y: 7}
 --- !u!1 &1554223404
 GameObject:

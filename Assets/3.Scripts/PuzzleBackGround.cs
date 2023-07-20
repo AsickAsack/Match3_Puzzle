@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+[ExecuteAlways]
 public class PuzzleBackGround : MonoBehaviour
 {
     [SerializeField]
@@ -15,7 +16,6 @@ public class PuzzleBackGround : MonoBehaviour
         image.rectTransform.anchoredPosition = pos;
         image.sprite = spr;
     }
-
 
 
 }
